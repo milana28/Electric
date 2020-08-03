@@ -20,6 +20,12 @@ namespace Electric.Domain
     public class Enclosure : IEnclosure
     {
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
+        private readonly IEnclosureSpecs _enclosureSpecs;
+
+        public Enclosure(IEnclosureSpecs enclosureSpecs)
+        {
+            _enclosureSpecs = enclosureSpecs;
+        }
 
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
@@ -90,7 +96,7 @@ namespace Electric.Domain
                 ProjectId = enclosureDao.ProjectId,
                 Devices = null,
                 TotalPrice = 0,
-                EnclosureSpecs = null
+                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id)
             };
 
             return enclosure;
