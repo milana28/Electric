@@ -28,6 +28,7 @@ namespace Electric
         {
             services.AddControllers();
             services.AddSingleton<IProject, Project>();
+            services.AddSingleton<IEnclosure, Enclosure>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

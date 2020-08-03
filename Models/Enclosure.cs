@@ -11,6 +11,6 @@ namespace Electric.Models
         public Project Project { set; get; }
         public List<Device> Devices { set; get; }
         public float TotalPrice { set; get; }
-        public float EnclosureSpecs { set; get; }
+        public EnclosureSpecs EnclosureSpecs { set; get; }
     }
 }
