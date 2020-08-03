@@ -4,7 +4,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Electric.Domain
 {
@@ -28,6 +27,12 @@ namespace Electric.Domain
                 DevicePerRow = enclosureSpecs.DevicePerRow,
                 EnclosureId = enclosureSpecs.EnclosureId
             };
+            
+            if (!DoesEnclosureExist(enclosureSpecs.EnclosureId))
+            {
+                return null;
+            }
+            
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertQuery = "INSERT INTO Electric.EnclosureSpecs VALUES (@rows, @devicePerRow, @enclosureId); SELECT * FROM Electric.EnclosureSpecs WHERE id = SCOPE_IDENTITY()";
@@ -56,6 +61,15 @@ namespace Electric.Domain
             var enclosureSpecsList = GetAll().FindAll(e => e.EnclosureId == id);
 
             return enclosureSpecsList.Count == 0 ? null : database.QuerySingle<Models.EnclosureSpecs>(sql, new {enclosureId = id});
+        }
+        
+        private static bool DoesEnclosureExist(int enclosureId)
+        {
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string sql = "SELECT * FROM Electric.Enclosure WHERE id = @id";
+            var enclosure = database.QuerySingle<EnclosureDao>(sql, new {id = enclosureId});
+
+            return enclosure != null;
         }
     }
 }
