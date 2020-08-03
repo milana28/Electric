@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Electric.Domain
 {
@@ -52,8 +53,9 @@ namespace Electric.Domain
         {
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string sql= "SELECT * FROM Electric.EnclosureSpecs WHERE enclosureId = @enclosureId";
-            
-            return database.QuerySingle<Models.EnclosureSpecs>(sql, new {enclosureId = id});
+            var enclosureSpecsList = GetAll().FindAll(e => e.EnclosureId == id);
+
+            return enclosureSpecsList.Count == 0 ? null : database.QuerySingle<Models.EnclosureSpecs>(sql, new {enclosureId = id});
         }
     }
 }

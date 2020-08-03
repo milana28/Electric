@@ -36,9 +36,14 @@ namespace Electric.Domain
                 ProjectId = enclosure.ProjectId
             };
 
+            if (!DoesProjectExist(enclosure.ProjectId))
+            {
+                return null;
+            }
+
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId); SELECT * FROM Electric.Enclosure WHERE id = SCOPE_IDENTITY()";
-
+          
             return TransformDaoToBusinessLogicEnclosure(database.QueryFirst<EnclosureDao>(insertQuery, enclosureDao));
         }
         
@@ -96,10 +101,19 @@ namespace Electric.Domain
                 ProjectId = enclosureDao.ProjectId,
                 Devices = null,
                 TotalPrice = 0,
-                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id)
+                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id),
             };
 
             return enclosure;
+        }
+
+        private static bool DoesProjectExist(int projectId)
+        {
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string sql = "SELECT * FROM Electric.Project WHERE id = @id";
+            var project = database.QuerySingle<ProjectDao>(sql, new {id = projectId});
+
+            return project != null;
         }
     }
 }
