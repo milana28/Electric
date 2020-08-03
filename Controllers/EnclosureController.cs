@@ -39,7 +39,7 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Models.Enclosure> GetProjectById(int id)
+        public ActionResult<Models.Enclosure> GetEnclosureById(int id)
         {
             var enclosure = _enclosure.GetEnclosureById(id);
             if (enclosure == null)
