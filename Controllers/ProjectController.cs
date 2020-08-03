@@ -64,6 +64,5 @@ namespace Electric.Controllers
 
             return _project.DeleteProject(id);
         }
-        
     }
 }

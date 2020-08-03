@@ -13,6 +13,7 @@ namespace Electric.Domain
         Models.Enclosure CreateEnclosure(EnclosureDao enclosure);
         List<Models.Enclosure> GetAll();
         Models.Enclosure GetEnclosureById(int id);
+        Models.Enclosure DeleteEnclosure(int id);
     }
     
     public class Enclosure : IEnclosure
