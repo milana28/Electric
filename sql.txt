@@ -1,0 +1,45 @@
+CREATE DATABASE electric;
+USE electric;
+CREATE SCHEMA Electric;
+
+CREATE TABLE Electric.Project (
+    id INT PRIMARY KEY IDENTITY,
+    name VARCHAR(500) NOT NULL,
+    date DATETIME NOT NULL
+);
+
+CREATE TABLE Electric.Enclosure (
+    id INT PRIMARY KEY IDENTITY,
+    name VARCHAR(500) NOT NULL,
+    date DATETIME NOT NULL,
+    projectId INT NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES Electric.Project(id)
+);
+
+CREATE TABLE Electric.EnclosureSpecs (
+    id INT PRIMARY KEY IDENTITY,
+    rows INT NOT NULL,
+    devicePerRow INT NOT NULL,
+    enclosureId INT NOT NULL,
+    FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id)
+);
+
+CREATE TABLE Electric.Device (
+    id INT PRIMARY KEY IDENTITY,
+    name VARCHAR(500) NOT NULL,
+    width INT NOT NULL,
+    amperes INT NOT NULL,
+    price FLOAT NOT NULL
+);
+
+CREATE TABLE Electric.Enclosure_Device (
+    id INT PRIMARY KEY IDENTITY,
+    enclosureId INT NOT NULL,
+    deviceId INT NOT NULL,
+    FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id),
+    FOREIGN KEY (deviceId) REFERENCES Electric.Device(id)
+);
+
+INSERT INTO Electric.Device (name, width, amperes, price) VALUES
+('FI/LS 3LN', 3, 10, 150),('FI/LS 3LN', 3, 16, 152),('FI/LS 3LN', 3, 20, 153),
+('LS 3LN', 3, 10, 64.5),('LS 3LN', 3, 16, 48.4),('LS 3LN', 3, 20, 53);
