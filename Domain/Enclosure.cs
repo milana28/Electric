@@ -14,18 +14,13 @@ namespace Electric.Domain
         List<Models.Enclosure> GetAll();
         Models.Enclosure GetEnclosureById(int id);
         Models.Enclosure DeleteEnclosure(int id);
+        List<Models.Enclosure> GetEnclosuresByProjectId(int id);
     }
     
     public class Enclosure : IEnclosure
     {
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
-        private readonly IProject _project;
 
-        public Enclosure(IProject project)
-        {
-            _project = project;
-        }
-        
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
             var enclosureDao = new EnclosureDao()
@@ -36,7 +31,7 @@ namespace Electric.Domain
             };
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
-            const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId); SELECT * FROM Electric.Project WHERE id = SCOPE_IDENTITY()";
+            const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId); SELECT * FROM Electric.Enclosure WHERE id = SCOPE_IDENTITY()";
 
             return TransformDaoToBusinessLogicEnclosure(database.QueryFirst<EnclosureDao>(insertQuery, enclosureDao));
         }
@@ -62,6 +57,19 @@ namespace Electric.Domain
             return TransformDaoToBusinessLogicEnclosure(enclosure);
         }
         
+        public List<Models.Enclosure> GetEnclosuresByProjectId(int id)
+        {
+            var enclosureList = new List<Models.Enclosure>();
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string sql= "SELECT * FROM Electric.Enclosure WHERE projectId = @projectId";
+            
+            var enclosures = database.Query<EnclosureDao>(sql, new {projectId = id}).ToList();
+
+            enclosures.ForEach(e => enclosureList.Add(TransformDaoToBusinessLogicEnclosure(e)));
+
+            return enclosureList;
+        }
+        
         public Models.Enclosure DeleteEnclosure(int id)
         {
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
@@ -79,7 +87,7 @@ namespace Electric.Domain
                 Id = enclosureDao.Id,
                 Name = enclosureDao.Name,
                 Date = enclosureDao.Date,
-                Project = _project.GetProjectById(enclosureDao.ProjectId),
+                ProjectId = enclosureDao.ProjectId,
                 Devices = null,
                 TotalPrice = 0,
                 EnclosureSpecs = null

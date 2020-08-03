@@ -19,6 +19,12 @@ namespace Electric.Domain
     public class Project : IProject
     {
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
+        private readonly IEnclosure _enclosure;
+
+        public Project(IEnclosure enclosure)
+        {
+            _enclosure = enclosure;
+        }
         
         public Models.Project CreateProject(ProjectDao project)
         {
@@ -67,15 +73,14 @@ namespace Electric.Domain
         
         private Models.Project TransformDaoToBusinessLogicProject(ProjectDao projectDao)
         {
-            var project = new Models.Project()
+            var enclosures = _enclosure.GetEnclosuresByProjectId(projectDao.Id);
+            return new Models.Project()
             {
                 Id = projectDao.Id,
                 Name = projectDao.Name,
                 Date = projectDao.Date,
-                Enclosures = null
+                Enclosures = enclosures
             };
-
-            return project;
         }
     }
 }
