@@ -14,7 +14,7 @@ namespace Electric.Domain
         Models.Device DeleteDevice(int id);
     }
     
-    public class Device
+    public class Device : IDevice
     {
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
 
