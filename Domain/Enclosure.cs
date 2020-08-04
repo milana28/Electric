@@ -31,17 +31,18 @@ namespace Electric.Domain
 
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
+            
+            if (!DoesProjectExist(enclosure.ProjectId))
+            {
+                return null;
+            }
+
             var enclosureDao = new EnclosureDao()
             {
                 Name = enclosure.Name,
                 Date = DateTime.Now,
                 ProjectId = enclosure.ProjectId
             };
-
-            if (!DoesProjectExist(enclosure.ProjectId))
-            {
-                return null;
-            }
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId); SELECT * FROM Electric.Enclosure WHERE id = SCOPE_IDENTITY()";

@@ -42,5 +42,14 @@ namespace Electric.Controllers
         {
             return _enclosureSpecs.GetEnclosureSpecsById(id);
         }
+        
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<Models.EnclosureSpecs> DeleteEnclosureSpecs(int id)
+        {
+            return _enclosureSpecs.DeleteEnclosureSpecs(id);
+        }
     }
 }

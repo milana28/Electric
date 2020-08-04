@@ -23,6 +23,7 @@ namespace Electric
             services.AddSingleton<IProject, Project>();
             services.AddSingleton<IEnclosure, Enclosure>();
             services.AddSingleton<IEnclosureSpecs, EnclosureSpecs>();
+            services.AddSingleton<IDevice, Device>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
