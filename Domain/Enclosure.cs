@@ -97,12 +97,13 @@ namespace Electric.Domain
         public Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId)
         {
             var enclosure = GetEnclosureById(enclosureId);
-            var devices = new List<Models.Device> {_device.GetDeviceById(deviceId)};
+            var device = _device.GetDeviceById(deviceId);
+            var devices = new List<Models.Device> {device};
             
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID)";
             database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
-            
+
             return  new Models.Enclosure()
             {
                 Id = enclosureId,
@@ -110,7 +111,7 @@ namespace Electric.Domain
                 Date = enclosure.Date,
                 ProjectId = projectId,
                 Devices = devices,
-                TotalPrice = 0,
+                TotalPrice = device.Price,
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
@@ -121,6 +122,8 @@ namespace Electric.Domain
             const string deviceQuery = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @enclosureId";
             var enclosureDevices = database.Query<Enclosure_Device>(deviceQuery, new {enclosureId = enclosureDao.Id});
             var devices = enclosureDevices.Select(enclosureDevice => _device.GetDeviceById(enclosureDevice.DeviceId)).ToList();
+            var totalPrice = new float();
+            devices.ForEach(el => totalPrice += el.Price);
 
             var enclosure = new Models.Enclosure()
             {
@@ -129,7 +132,7 @@ namespace Electric.Domain
                 Date = enclosureDao.Date,
                 ProjectId = enclosureDao.ProjectId,
                 Devices = devices,
-                TotalPrice = 0,
+                TotalPrice = totalPrice,
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id),
             };
 
