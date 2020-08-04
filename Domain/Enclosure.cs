@@ -21,10 +21,12 @@ namespace Electric.Domain
     {
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
         private readonly IEnclosureSpecs _enclosureSpecs;
+        private readonly IDevice _device;
 
-        public Enclosure(IEnclosureSpecs enclosureSpecs)
+        public Enclosure(IEnclosureSpecs enclosureSpecs, IDevice device)
         {
             _enclosureSpecs = enclosureSpecs;
+            _device = device;
         }
 
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
