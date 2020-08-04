@@ -24,11 +24,18 @@ namespace Electric
             services.AddSingleton<IEnclosure, Enclosure>();
             services.AddSingleton<IEnclosureSpecs, EnclosureSpecs>();
             services.AddSingleton<IDevice, Device>();
+            services.AddSwaggerGen();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Electric");
+            });
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
