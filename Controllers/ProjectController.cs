@@ -11,10 +11,12 @@ namespace Electric.Controllers
     public class ProjectController : ControllerBase
     {
         private readonly IProject _project;
+        private readonly IEnclosure _enclosure;
 
-        public ProjectController(IProject project)
+        public ProjectController(IProject project, IEnclosure enclosure)
         {
             _project = project;
+            _enclosure = enclosure;
         }
         
         [HttpPost]
@@ -24,6 +26,26 @@ namespace Electric.Controllers
         public ActionResult<Models.Project> CreateProject(ProjectDao project)
         {
             return _project.CreateProject(project);
+        }
+        
+        [HttpPost("{projectId}/enclosure/{enclosureId}/device")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<Models.Enclosure> AddDeviceToEnclosure(int projectId, int enclosureId, Models.Enclosure_Device enclosureDevice)
+        {
+            var enclosure = _enclosure.GetEnclosureById(enclosureId);
+            if (enclosure == null)
+            {
+                return NotFound("Enclosure with that ID doesn't exist!");
+            }
+
+            if (enclosure.ProjectId != projectId)
+            {
+                return NotFound("Enclosure with that ProjectID doesn't exist!");
+            }
+            
+            return _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice.DeviceId);
         }
         
         [HttpGet]

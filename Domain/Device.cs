@@ -45,7 +45,7 @@ namespace Electric.Domain
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string sql = "SELECT * FROM Electric.Device WHERE id = @deviceId";
             
-            return database.QuerySingle<Models.Device>(sql, new {deviceId = id} );
+            return database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
         }
         
         public Models.Device DeleteDevice(int id)

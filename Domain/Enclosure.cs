@@ -15,6 +15,7 @@ namespace Electric.Domain
         Models.Enclosure GetEnclosureById(int id);
         Models.Enclosure DeleteEnclosure(int id);
         List<Models.Enclosure> GetEnclosuresByProjectId(int id);
+        Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId);
     }
     
     public class Enclosure : IEnclosure
@@ -31,7 +32,6 @@ namespace Electric.Domain
 
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
-            
             if (!DoesProjectExist(enclosure.ProjectId))
             {
                 return null;
@@ -93,16 +93,42 @@ namespace Electric.Domain
 
             return GetEnclosureById(id);
         }
+
+        public Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId)
+        {
+            var enclosure = GetEnclosureById(enclosureId);
+            var devices = new List<Models.Device> {_device.GetDeviceById(deviceId)};
+            
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID)";
+            database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+            
+            return  new Models.Enclosure()
+            {
+                Id = enclosureId,
+                Name = enclosure.Name,
+                Date = enclosure.Date,
+                ProjectId = projectId,
+                Devices = devices,
+                TotalPrice = 0,
+                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
+            };
+        }
         
         private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
         {
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string deviceQuery = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @enclosureId";
+            var enclosureDevices = database.Query<Enclosure_Device>(deviceQuery, new {enclosureId = enclosureDao.Id});
+            var devices = enclosureDevices.Select(enclosureDevice => _device.GetDeviceById(enclosureDevice.DeviceId)).ToList();
+
             var enclosure = new Models.Enclosure()
             {
                 Id = enclosureDao.Id,
                 Name = enclosureDao.Name,
                 Date = enclosureDao.Date,
                 ProjectId = enclosureDao.ProjectId,
-                Devices = null,
+                Devices = devices,
                 TotalPrice = 0,
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id),
             };

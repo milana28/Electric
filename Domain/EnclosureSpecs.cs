@@ -59,9 +59,9 @@ namespace Electric.Domain
         {
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string sql= "SELECT * FROM Electric.EnclosureSpecs WHERE enclosureId = @enclosureId";
-            var enclosureSpecs = database.QuerySingle<Models.EnclosureSpecs>(sql, new {enclosureId = id});
+            var enclosureSpecs = database.QueryFirstOrDefault<Models.EnclosureSpecs>(sql, new {enclosureId = id});
 
-            return enclosureSpecs == null ? null : enclosureSpecs;
+            return enclosureSpecs;
         }
         
         public Models.EnclosureSpecs DeleteEnclosureSpecs(int id)
