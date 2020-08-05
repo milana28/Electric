@@ -19,10 +19,17 @@ namespace Electric.Domain
     public class EnclosureSpecs : IEnclosureSpecs
     {
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
+        public delegate bool CheckIfObjectExist(int id);
+        private readonly CheckIfObjectExist _checkIfObjectExist = DoesEnclosureExist;
 
         public Models.EnclosureSpecs CreateEnclosureSpecs(Models.EnclosureSpecs enclosureSpecs)
         {
-            if (!DoesEnclosureExist(enclosureSpecs.EnclosureId))
+            // if (!DoesEnclosureExist(enclosureSpecs.EnclosureId))
+            // {
+            //     return null;
+            // }
+
+            if (_checkIfObjectExist(enclosureSpecs.EnclosureId))
             {
                 return null;
             }
@@ -73,7 +80,7 @@ namespace Electric.Domain
 
             return GetEnclosureSpecsById(id);
         }
-        
+
         private static bool DoesEnclosureExist(int enclosureId)
         {
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
