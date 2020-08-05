@@ -87,11 +87,11 @@ namespace Electric.Controllers
             return _project.DeleteProject(id);
         }
         
-        [HttpDelete("{projectId}/enclosure/{enclosureId}/device")]
+        [HttpDelete("{projectId}/enclosure/{enclosureId}/device/{deviceId}")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Models.Enclosure> DeleteDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
+        public ActionResult<Models.Enclosure> DeleteDevice(int projectId, int enclosureId, int deviceId)
         {
             var enclosure = _enclosure.GetEnclosureById(enclosureId);
             if (enclosure == null)
@@ -104,7 +104,7 @@ namespace Electric.Controllers
                 return NotFound("Enclosure with that ProjectID doesn't exist!");
             }
             
-            return _enclosure.RemoveDevice(projectId, enclosureId, enclosureDevice.DeviceId);
+            return _enclosure.RemoveDevice(projectId, enclosureId, deviceId);
         }
     }
 }

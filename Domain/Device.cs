@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
+using Electric.Models;
 
 namespace Electric.Domain
 {
@@ -12,6 +13,7 @@ namespace Electric.Domain
         Models.Device CreateDevice(Models.Device device);
         Models.Device GetDeviceById(int id);
         Models.Device DeleteDevice(int id);
+        List<Models.Device> GetDevicesForEnclosure(int enclosureId);
     }
     
     public class Device : IDevice
@@ -38,6 +40,17 @@ namespace Electric.Domain
         {
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             return database.Query<Models.Device>("SELECT * FROM Electric.Device").ToList();
+        }
+        
+        public List<Models.Device> GetDevicesForEnclosure(int enclosureId)
+        {
+            var devices = new List<Models.Device>();
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string sql = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @id";
+            var enclosureDevices = database.Query<Enclosure_Device>(sql, new {id = enclosureId}).ToList();
+            enclosureDevices.ForEach(el => devices.Add(GetDeviceById(el.DeviceId)));
+
+            return devices;
         }
 
         public Models.Device GetDeviceById(int id)

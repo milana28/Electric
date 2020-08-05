@@ -110,11 +110,12 @@ namespace Electric.Domain
         {
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(deviceId);
-            var devices = new List<Models.Device> {device};
-            
+
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID)";
             database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+            
+            var devices = _device.GetDevicesForEnclosure(enclosureId);
 
             return  new Models.Enclosure()
             {
@@ -132,11 +133,12 @@ namespace Electric.Domain
         {
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(deviceId);
-            var devices = new List<Models.Device> {device};
-            
+
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertEnclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
             database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+            
+            var devices = _device.GetDevicesForEnclosure(enclosureId);
 
             return  new Models.Enclosure()
             {
@@ -152,10 +154,7 @@ namespace Electric.Domain
         
         private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
-            const string deviceQuery = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @enclosureId";
-            var enclosureDevices = database.Query<Enclosure_Device>(deviceQuery, new {enclosureId = enclosureDao.Id});
-            var devices = enclosureDevices.Select(enclosureDevice => _device.GetDeviceById(enclosureDevice.DeviceId)).ToList();
+            var devices = _device.GetDevicesForEnclosure(enclosureDao.Id);
             var totalPrice = new float();
             devices.ForEach(el => totalPrice += el.Price);
 
