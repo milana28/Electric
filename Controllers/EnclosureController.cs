@@ -30,9 +30,9 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<List<Models.Enclosure>> GetAll()
+        public ActionResult<List<Models.Enclosure>> GetEnclosures([FromQuery(Name = "projectId")] int? projectId)
         {
-            return _enclosure.GetAll();
+            return _enclosure.GetEnclosures(projectId);
         }
         
         [HttpGet("{id}")]

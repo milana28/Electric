@@ -14,7 +14,8 @@ namespace Electric.Domain
         List<Models.Enclosure> GetAll();
         Models.Enclosure GetEnclosureById(int id);
         Models.Enclosure DeleteEnclosure(int id);
-        List<Models.Enclosure> GetEnclosuresByProjectId(int id);
+        List<Models.Enclosure> GetEnclosuresByProjectId(int? id);
+        List<Models.Enclosure> GetEnclosures(int? projectId);
         Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId);
     }
     
@@ -54,6 +55,11 @@ namespace Electric.Domain
           
             return TransformDaoToBusinessLogicEnclosure(database.QueryFirst<EnclosureDao>(insertQuery, enclosureDao));
         }
+
+        public List<Models.Enclosure> GetEnclosures(int? projectId)
+        {
+            return projectId == null ? GetAll() : GetEnclosuresByProjectId(projectId);
+        }
         
         public List<Models.Enclosure> GetAll()
         {
@@ -76,7 +82,7 @@ namespace Electric.Domain
             return TransformDaoToBusinessLogicEnclosure(enclosure);
         }
         
-        public List<Models.Enclosure> GetEnclosuresByProjectId(int id)
+        public List<Models.Enclosure> GetEnclosuresByProjectId(int? id)
         {
             var enclosureList = new List<Models.Enclosure>();
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
