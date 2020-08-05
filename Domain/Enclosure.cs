@@ -17,6 +17,7 @@ namespace Electric.Domain
         List<Models.Enclosure> GetEnclosuresByProjectId(int? id);
         List<Models.Enclosure> GetEnclosures(int? projectId);
         Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId);
+        Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId);
     }
     
     public class Enclosure : IEnclosure
@@ -113,6 +114,28 @@ namespace Electric.Domain
             
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID)";
+            database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+
+            return  new Models.Enclosure()
+            {
+                Id = enclosureId,
+                Name = enclosure.Name,
+                Date = enclosure.Date,
+                ProjectId = projectId,
+                Devices = devices,
+                TotalPrice = device.Price,
+                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
+            };
+        }
+        
+        public Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId)
+        {
+            var enclosure = GetEnclosureById(enclosureId);
+            var device = _device.GetDeviceById(deviceId);
+            var devices = new List<Models.Device> {device};
+            
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string insertEnclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
             database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
 
             return  new Models.Enclosure()
