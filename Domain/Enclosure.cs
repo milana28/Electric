@@ -108,9 +108,14 @@ namespace Electric.Domain
 
         public Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
+            if (!CheckIfDeviceCanFitOnEnclosure(enclosureId, enclosureDevice))
+            {
+                return null;
+            }
+            
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
-
+            
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID, @row, @column)";
             database.Execute(insertEnclosureDevice, 
@@ -171,6 +176,17 @@ namespace Electric.Domain
             };
 
             return enclosure;
+        }
+
+        private bool CheckIfDeviceCanFitOnEnclosure(int enclosureId, Enclosure_Device enclosureDevice)
+        {
+            var enclosure = GetEnclosureById(enclosureId);
+            if (enclosureDevice.Row > enclosure.EnclosureSpecs.Rows || enclosureDevice.Column > enclosure.EnclosureSpecs.Columns)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static bool DoesProjectExist(int projectId)
