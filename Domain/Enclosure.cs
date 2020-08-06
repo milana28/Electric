@@ -16,7 +16,7 @@ namespace Electric.Domain
         Models.Enclosure DeleteEnclosure(int id);
         List<Models.Enclosure> GetEnclosuresByProjectId(int? id);
         List<Models.Enclosure> GetEnclosures(int? projectId);
-        Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId);
+        Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice);
         Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId);
     }
     
@@ -35,14 +35,14 @@ namespace Electric.Domain
 
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
-            if (_checkIfObjectExist(enclosure.ProjectId))
-            {
-                return null;
-            }
-            // if (!DoesProjectExist(enclosure.ProjectId))
+            // if (_checkIfObjectExist(enclosure.ProjectId))
             // {
             //     return null;
             // }
+            if (!DoesProjectExist(enclosure.ProjectId))
+            {
+                return null;
+            }
 
             var enclosureDao = new EnclosureDao()
             {
@@ -106,14 +106,15 @@ namespace Electric.Domain
             return GetEnclosureById(id);
         }
 
-        public Models.Enclosure AddNewDevice(int projectId, int enclosureId, int deviceId)
+        public Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
             var enclosure = GetEnclosureById(enclosureId);
-            var device = _device.GetDeviceById(deviceId);
+            var device = _device.GetDeviceById(enclosureDevice.DeviceId);
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
-            const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID)";
-            database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+            const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID, @row, @column)";
+            database.Execute(insertEnclosureDevice, 
+                new {enclosureID = enclosureId, deviceID = enclosureDevice.DeviceId, row = enclosureDevice.Row, column = enclosureDevice.Column});
             
             var devices = _device.GetDevicesForEnclosure(enclosureId);
 

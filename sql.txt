@@ -21,8 +21,7 @@ CREATE TABLE Electric.EnclosureSpecs (
     rows INT NOT NULL,
     columns INT NOT NULL,
     enclosureId INT NOT NULL,
-    FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id) ON DELETE CASCADE
-                                     
+    FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id) ON DELETE CASCADE                            
 );
 
 CREATE TABLE Electric.Device (
@@ -38,6 +37,8 @@ CREATE TABLE Electric.Enclosure_Device (
     id INT PRIMARY KEY IDENTITY,
     enclosureId INT NOT NULL,
     deviceId INT NOT NULL,
+    row INT NOT NULL,
+    column INT NOT NULL,
     FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id) ON DELETE CASCADE,
     FOREIGN KEY (deviceId) REFERENCES Electric.Device(id) ON DELETE CASCADE
 );

@@ -24,16 +24,16 @@ namespace Electric.Domain
 
         public Models.EnclosureSpecs CreateEnclosureSpecs(Models.EnclosureSpecs enclosureSpecs)
         {
-            // if (!DoesEnclosureExist(enclosureSpecs.EnclosureId))
-            // {
-            //     return null;
-            // }
-
-            if (_checkIfObjectExist(enclosureSpecs.EnclosureId))
+            if (!DoesEnclosureExist(enclosureSpecs.EnclosureId))
             {
                 return null;
             }
-            
+
+            // if (_checkIfObjectExist(enclosureSpecs.EnclosureId))
+            // {
+            //     return null;
+            // }
+            //
             var newEnclosureSpecs = new Models.EnclosureSpecs()
             {
                 Rows = enclosureSpecs.Rows,

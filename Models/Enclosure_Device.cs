@@ -5,7 +5,7 @@ namespace Electric.Models
         public int Id { set; get; }
         public int EnclosureId { set; get; }
         public int DeviceId { set; get; }
-        public int Rows { set; get; }
-        public int Columns { set; get; }
+        public int Row { set; get; }
+        public int Column { set; get; }
     }
 }

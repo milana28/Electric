@@ -45,7 +45,7 @@ namespace Electric.Controllers
                 return NotFound("Enclosure with that ProjectID doesn't exist!");
             }
             
-            return _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice.DeviceId);
+            return _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice);
         }
         
         [HttpGet]
