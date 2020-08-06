@@ -54,7 +54,7 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Models.Enclosure> DeleteProject(int id)
+        public ActionResult<Models.Enclosure> DeleteEnclosure(int id)
         {
             var enclosure = _enclosure.GetEnclosureById(id);
             if (enclosure == null)

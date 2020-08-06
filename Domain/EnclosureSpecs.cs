@@ -37,13 +37,13 @@ namespace Electric.Domain
             var newEnclosureSpecs = new Models.EnclosureSpecs()
             {
                 Rows = enclosureSpecs.Rows,
-                DevicePerRow = enclosureSpecs.DevicePerRow,
+                Columns = enclosureSpecs.Columns,
                 EnclosureId = enclosureSpecs.EnclosureId
             };
             
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertQuery = 
-                "INSERT INTO Electric.EnclosureSpecs VALUES (@rows, @devicePerRow, @enclosureId); SELECT * FROM Electric.EnclosureSpecs WHERE id = SCOPE_IDENTITY()";
+                "INSERT INTO Electric.EnclosureSpecs VALUES (@rows, @columns, @enclosureId); SELECT * FROM Electric.EnclosureSpecs WHERE id = SCOPE_IDENTITY()";
 
             return database.QueryFirst<Models.EnclosureSpecs>(insertQuery, newEnclosureSpecs);
         }

@@ -26,12 +26,13 @@ namespace Electric.Domain
             {
                 Name = device.Name,
                 Width = device.Width,
+                Height = device.Height,
                 Amperes = device.Amperes,
                 Price = device.Price
             };
             
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
-            const string insertQuery = "INSERT INTO Electric.Device VALUES (@name, @width, @amperes, @price); SELECT * FROM Electric.Device WHERE id = SCOPE_IDENTITY()";
+            const string insertQuery = "INSERT INTO Electric.Device VALUES (@name, @width, @height, @amperes, @price); SELECT * FROM Electric.Device WHERE id = SCOPE_IDENTITY()";
             
             return database.QueryFirst<Models.Device>(insertQuery, newDevice);
         }
