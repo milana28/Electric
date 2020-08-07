@@ -32,7 +32,7 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Enclosure_DeviceDto> AddDeviceToEnclosure(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
+        public ActionResult<Models.Enclosure> AddDeviceToEnclosure(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
             var enclosure = _enclosure.GetEnclosureById(enclosureId);
             if (enclosure == null)
@@ -71,6 +71,27 @@ namespace Electric.Controllers
 
             return project;
         }
+        
+        [HttpGet("{projectId}/enclosure/{enclosureId}/device/{deviceId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<Enclosure_DeviceDto> GetEnclosureWithDevice(int projectId, int enclosureId, int deviceId)
+        {
+            var enclosure = _enclosure.GetEnclosureById(enclosureId);
+            if (enclosure == null)
+            {
+                return NotFound("Enclosure with that ID doesn't exist!");
+            }
+
+            if (enclosure.ProjectId != projectId)
+            {
+                return NotFound("Enclosure with that ProjectID doesn't exist!");
+            }
+            
+            return _enclosure.GetEnclosureWithDevicePosition(enclosureId, deviceId);
+        }
+
         
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
