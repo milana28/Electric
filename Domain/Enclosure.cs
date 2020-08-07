@@ -190,7 +190,9 @@ namespace Electric.Domain
         private bool CheckIfRowsAndColumnsAreSuitableForEnclosure(int enclosureId, Enclosure_Device enclosureDevice)
         {
             var enclosure = GetEnclosureById(enclosureId);
-            return enclosureDevice.Row <= enclosure.EnclosureSpecs.Rows && enclosureDevice.Column <= enclosure.EnclosureSpecs.Columns;
+            var device = _device.GetDeviceById(enclosureDevice.DeviceId);
+            return (enclosureDevice.Row <= enclosure.EnclosureSpecs.Rows && enclosureDevice.Column <= enclosure.EnclosureSpecs.Columns) ||
+                   (enclosureDevice.Row + device.Height <= enclosure.EnclosureSpecs.Rows && enclosureDevice.Column + device.Width <= enclosure.EnclosureSpecs.Columns);
         }
 
         private bool CheckIfPositionIsAvailable(int enclosureId, Enclosure_Device enclosureDevice)
@@ -198,19 +200,24 @@ namespace Electric.Domain
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
             var row = enclosureDevice.Row;
             var column = enclosureDevice.Column;
+            var existingEnclosureDevices = new List<Enclosure_Device>();
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string sql = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @enclosureID";
             var enclosureDevices = database.Query<Enclosure_Device>(sql, new {enclosureID = enclosureId}).ToList();
-            var existingEnclosureDevice = enclosureDevices.FindLast(ed =>
+            enclosureDevices.ForEach(ed =>
             {
                 var deviceForEd = _device.GetDeviceById(ed.DeviceId);
-                return (column >= ed.Column && column < ed.Column + deviceForEd.Width &&
-                        row <= ed.Row && row <= ed.Row + deviceForEd.Height) ||
-                       (column > ed.Column && column + device.Width <= ed.Column + deviceForEd.Width);
+                if (((column >= ed.Column && column < ed.Column + deviceForEd.Width && (row <= ed.Row || row <= ed.Row + deviceForEd.Height)) ||
+                       (column > ed.Column && column + device.Width <= ed.Column + deviceForEd.Width)) ||
+                       ((column <= ed.Column && column + device.Width > ed.Column && (row <= ed.Row || row <= ed.Row + deviceForEd.Height)) ||
+                        (column < ed.Column && column + device.Width >= ed.Column)))
+                {
+                    existingEnclosureDevices.Add(ed);
+                }
             });
 
-            return existingEnclosureDevice == null;
+            return existingEnclosureDevices.Count == 0;
         }
         
 
