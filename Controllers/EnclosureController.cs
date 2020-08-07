@@ -35,6 +35,15 @@ namespace Electric.Controllers
             return _enclosure.GetEnclosures(projectId);
         }
         
+        [HttpGet("{enclosureId}/device/{deviceId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<Enclosure_DeviceDto> GetEnclosureWithDevice(int enclosureId, int deviceId)
+        {
+            return _enclosure.GetEnclosureWithDevicePosition(enclosureId, deviceId);
+        }
+        
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

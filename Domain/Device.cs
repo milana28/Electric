@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Electric.Domain
 {
@@ -14,6 +15,7 @@ namespace Electric.Domain
         Models.Device GetDeviceById(int id);
         Models.Device DeleteDevice(int id);
         List<Models.Device> GetDevicesForEnclosure(int enclosureId);
+        List<DeviceWithPosition> GetDeviceWithPosition(int enclosureId, int deviceId);
     }
     
     public class Device : IDevice
@@ -52,6 +54,17 @@ namespace Electric.Domain
             enclosureDevices.ForEach(el => devices.Add(GetDeviceById(el.DeviceId)));
 
             return devices;
+        }
+        
+        public List<DeviceWithPosition> GetDeviceWithPosition(int enclosureId, int deviceId)
+        {
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            var device = new Models.Device();
+            const string sql =
+                "SELECT ed.enclosureId, d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device AS ed LEFT JOIN Electric.Device AS d ON ed.deviceId = d.id WHERE d.id = @deviceID AND ed.enclosureId = @enclosureID";
+            var deviceWithPosition = database.Query<DeviceWithPosition>(sql, new {deviceID = deviceId, enclosureID = enclosureId}).ToList();
+
+            return deviceWithPosition;
         }
 
         public Models.Device GetDeviceById(int id)

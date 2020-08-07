@@ -24,7 +24,7 @@ namespace Electric.Controllers
         {
             return _device.CreateDevice(device);
         }
-        
+   
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

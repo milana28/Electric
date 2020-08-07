@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Linq;
 using Dapper;
 using Electric.Models;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Electric.Domain
 {
@@ -20,6 +19,7 @@ namespace Electric.Domain
         List<Models.Enclosure> GetEnclosures(int? projectId);
         Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice);
         Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId);
+        Enclosure_DeviceDto GetEnclosureWithDevicePosition(int enclosureId, int deviceId);
     }
     
     public class Enclosure : IEnclosure
@@ -145,7 +145,6 @@ namespace Electric.Domain
         public Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId)
         {
             var enclosure = GetEnclosureById(enclosureId);
-            var device = _device.GetDeviceById(deviceId);
             var totalPrice = new float();
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
@@ -162,6 +161,26 @@ namespace Electric.Domain
                 Date = enclosure.Date,
                 ProjectId = projectId,
                 Devices = devices,
+                TotalPrice = totalPrice,
+                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
+            };
+        }
+        
+        public Enclosure_DeviceDto GetEnclosureWithDevicePosition(int enclosureId, int deviceId)
+        {
+            var deviceWithPosition = _device.GetDeviceWithPosition(enclosureId, deviceId);
+            deviceWithPosition.ForEach(d => d.Device = _device.GetDeviceById(deviceId));
+            var enclosure = GetEnclosureById(enclosureId);
+            var totalPrice = new float();
+            deviceWithPosition.ForEach(el => totalPrice += el.Device.Price);
+            
+            return new Enclosure_DeviceDto()
+            {
+                Id = enclosureId,
+                Name = enclosure.Name,
+                Date = enclosure.Date,
+                ProjectId = enclosure.ProjectId,
+                DeviceWithPosition = deviceWithPosition,
                 TotalPrice = totalPrice,
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
