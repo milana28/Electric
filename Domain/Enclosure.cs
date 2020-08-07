@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Electric.Domain
 {
@@ -108,7 +110,12 @@ namespace Electric.Domain
 
         public Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
-            if (!CheckIfDeviceCanFitOnEnclosure(enclosureId, enclosureDevice))
+            if (!CheckIfRowsAndColumnsAreSuitableForEnclosure(enclosureId, enclosureDevice))
+            {
+                return null;
+            }
+
+            if (!CheckIfPositionIsAvailable(enclosureId, enclosureDevice))
             {
                 return null;
             }
@@ -139,12 +146,14 @@ namespace Electric.Domain
         {
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(deviceId);
+            var totalPrice = new float();
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
-            const string insertEnclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
-            database.Execute(insertEnclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+            const string enclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
+            database.Execute(enclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
             
             var devices = _device.GetDevicesForEnclosure(enclosureId);
+            devices.ForEach(el => totalPrice += el.Price);
 
             return  new Models.Enclosure()
             {
@@ -153,7 +162,7 @@ namespace Electric.Domain
                 Date = enclosure.Date,
                 ProjectId = projectId,
                 Devices = devices,
-                TotalPrice = device.Price,
+                TotalPrice = totalPrice,
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
@@ -178,16 +187,32 @@ namespace Electric.Domain
             return enclosure;
         }
 
-        private bool CheckIfDeviceCanFitOnEnclosure(int enclosureId, Enclosure_Device enclosureDevice)
+        private bool CheckIfRowsAndColumnsAreSuitableForEnclosure(int enclosureId, Enclosure_Device enclosureDevice)
         {
             var enclosure = GetEnclosureById(enclosureId);
-            if (enclosureDevice.Row > enclosure.EnclosureSpecs.Rows || enclosureDevice.Column > enclosure.EnclosureSpecs.Columns)
-            {
-                return false;
-            }
-
-            return true;
+            return enclosureDevice.Row <= enclosure.EnclosureSpecs.Rows && enclosureDevice.Column <= enclosure.EnclosureSpecs.Columns;
         }
+
+        private bool CheckIfPositionIsAvailable(int enclosureId, Enclosure_Device enclosureDevice)
+        {
+            var device = _device.GetDeviceById(enclosureDevice.DeviceId);
+            var row = enclosureDevice.Row;
+            var column = enclosureDevice.Column;
+
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string sql = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @enclosureID";
+            var enclosureDevices = database.Query<Enclosure_Device>(sql, new {enclosureID = enclosureId}).ToList();
+            var existingEnclosureDevice = enclosureDevices.FindLast(ed =>
+            {
+                var deviceForEd = _device.GetDeviceById(ed.DeviceId);
+                return (column >= ed.Column && column < ed.Column + deviceForEd.Width &&
+                        row <= ed.Row && row <= ed.Row + deviceForEd.Height) ||
+                       (column > ed.Column && column + device.Width <= ed.Column + deviceForEd.Width);
+            });
+
+            return existingEnclosureDevice == null;
+        }
+        
 
         private static bool DoesProjectExist(int projectId)
         {
