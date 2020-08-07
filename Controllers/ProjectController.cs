@@ -32,7 +32,7 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Models.Enclosure> AddDeviceToEnclosure(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
+        public ActionResult<Enclosure_DeviceDto> AddDeviceToEnclosure(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
             var enclosure = _enclosure.GetEnclosureById(enclosureId);
             if (enclosure == null)
