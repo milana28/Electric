@@ -26,7 +26,6 @@ namespace Electric.Domain
         private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
         private readonly IEnclosureSpecs _enclosureSpecs;
         private readonly IDevice _device;
-        private readonly EnclosureSpecs.CheckIfObjectExist _checkIfObjectExist = DoesProjectExist;
 
         public Enclosure(IEnclosureSpecs enclosureSpecs, IDevice device)
         {
@@ -36,10 +35,6 @@ namespace Electric.Domain
 
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
-            // if (_checkIfObjectExist(enclosure.ProjectId))
-            // {
-            //     return null;
-            // }
             if (!DoesProjectExist(enclosure.ProjectId))
             {
                 return null;
