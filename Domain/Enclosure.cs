@@ -19,6 +19,7 @@ namespace Electric.Domain
         Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice);
         Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId);
         Enclosure_DeviceDto GetEnclosureWithDevicePosition(int enclosureId, int deviceId);
+        float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceWithPosition>? deviceWithPosition);
     }
     
     public class Enclosure : IEnclosure
@@ -115,15 +116,16 @@ namespace Electric.Domain
             }
             
             var enclosure = GetEnclosureById(enclosureId);
-            var totalPrice = new float();
-
+            
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID, @row, @column)";
             database.Execute(insertEnclosureDevice, 
                 new {enclosureID = enclosureId, deviceID = enclosureDevice.DeviceId, row = enclosureDevice.Row, column = enclosureDevice.Column});
-            
+            const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
+            database.Execute(updateEnclosure, 
+                new {enclosureID = enclosureId, totalPrice = CalculateTotalPrice(enclosure, null)});
+
             var devices = _device.GetDevicesForEnclosure(enclosureId);
-            devices.ForEach(el => totalPrice += el.Price);
 
             return  new Models.Enclosure()
             {
@@ -132,7 +134,7 @@ namespace Electric.Domain
                 Date = enclosure.Date,
                 ProjectId = projectId,
                 Devices = devices,
-                TotalPrice = totalPrice,
+                TotalPrice = CalculateTotalPrice(enclosure, null),
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
@@ -140,14 +142,15 @@ namespace Electric.Domain
         public Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId)
         {
             var enclosure = GetEnclosureById(enclosureId);
-            var totalPrice = new float();
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string enclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
             database.Execute(enclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
+            const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
+            database.Execute(updateEnclosure, 
+                new {enclosureID = enclosureId, totalPrice = CalculateTotalPrice(enclosure, null)});
             
             var devices = _device.GetDevicesForEnclosure(enclosureId);
-            devices.ForEach(el => totalPrice += el.Price);
 
             return  new Models.Enclosure()
             {
@@ -156,7 +159,7 @@ namespace Electric.Domain
                 Date = enclosure.Date,
                 ProjectId = projectId,
                 Devices = devices,
-                TotalPrice = totalPrice,
+                TotalPrice = CalculateTotalPrice(enclosure, null),
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
@@ -164,11 +167,8 @@ namespace Electric.Domain
         public Enclosure_DeviceDto GetEnclosureWithDevicePosition(int enclosureId, int deviceId)
         {
             var deviceWithPosition = _device.GetDeviceWithPosition(enclosureId, deviceId);
-            deviceWithPosition.ForEach(d => d.Device = _device.GetDeviceById(deviceId));
             var enclosure = GetEnclosureById(enclosureId);
-            var totalPrice = new float();
-            deviceWithPosition.ForEach(el => totalPrice += el.Device.Price);
-            
+
             return new Enclosure_DeviceDto()
             {
                 Id = enclosureId,
@@ -176,17 +176,30 @@ namespace Electric.Domain
                 Date = enclosure.Date,
                 ProjectId = enclosure.ProjectId,
                 DeviceWithPosition = deviceWithPosition,
-                TotalPrice = totalPrice,
+                TotalPrice = CalculateTotalPrice(enclosure, deviceWithPosition),
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
-        
+
+        public float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceWithPosition>? deviceWithPosition)
+        {
+            var totalPrice = new float();
+            var devices = _device.GetDevicesForEnclosure(enclosure.Id);
+            if (deviceWithPosition == null)
+            {
+                devices.ForEach(el => totalPrice += el.Price);
+            }
+            else
+            {
+                deviceWithPosition.ForEach(el => totalPrice += el.Price);
+            }
+            
+            return totalPrice;
+        }
+
         private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
         {
             var devices = _device.GetDevicesForEnclosure(enclosureDao.Id);
-            var totalPrice = new float();
-            devices.ForEach(el => totalPrice += el.Price);
-
             var enclosure = new Models.Enclosure()
             {
                 Id = enclosureDao.Id,
@@ -194,7 +207,7 @@ namespace Electric.Domain
                 Date = enclosureDao.Date,
                 ProjectId = enclosureDao.ProjectId,
                 Devices = devices,
-                TotalPrice = totalPrice,
+                TotalPrice = enclosureDao.TotalPrice,
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id),
             };
 
@@ -205,37 +218,57 @@ namespace Electric.Domain
         {
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
-            
-            return (enclosureDevice.Row <= enclosure.EnclosureSpecs.Rows && 
-                    enclosureDevice.Column <= enclosure.EnclosureSpecs.Columns) &&
-                   ((enclosureDevice.Row + device.Height - 1) <= enclosure.EnclosureSpecs.Rows && 
-                    (enclosureDevice.Column + device.Width - 1) <= enclosure.EnclosureSpecs.Columns);
+
+            return AreRowsAndColumnsSuitableForEnclosureDimensions(enclosureDevice.Row, enclosureDevice.Column,
+                enclosure.EnclosureSpecs.Rows, enclosure.EnclosureSpecs.Columns, device.Width, device.Height);
+        }
+
+        private static bool AreRowsAndColumnsSuitableForEnclosureDimensions(int deviceRow, int deviceColumn, int enclosureRows,
+            int enclosureColumns, int deviceWidth, int deviceHeight)
+        {
+            return (deviceRow <= enclosureRows && deviceColumn <= enclosureColumns) && 
+                   ((deviceRow + deviceHeight - 1) <= enclosureRows && 
+                    (deviceColumn + deviceWidth - 1) <= enclosureColumns);
         }
 
         private bool CheckIfPositionIsAvailable(int enclosureId, Enclosure_Device enclosureDevice)
         {
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
-            var row = enclosureDevice.Row;
-            var column = enclosureDevice.Column;
-            var existingEnclosureDevices = new List<Enclosure_Device>();
+            var existingEnclosureDevices = new List<DeviceWithPosition>();
 
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
-            const string sql = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @enclosureID";
-            var enclosureDevices = database.Query<Enclosure_Device>(sql, new {enclosureID = enclosureId}).ToList();
-          
-            enclosureDevices.ForEach(ed =>
+            const string sql = 
+                "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
+            var existingDevicesWithPosition = database.Query<DeviceWithPosition>(sql, new {enclosureID = enclosureId}).ToList();
+
+            existingDevicesWithPosition.ForEach(d =>
             {
-                var deviceForEd = _device.GetDeviceById(ed.DeviceId);
-                if (row != ed.Row && row != ed.Row + deviceForEd.Height - 1 &&
-                    row + device.Height - 1 != ed.Row) return;
-                if ((column >= ed.Column && column <= (ed.Column + deviceForEd.Width - 1)) ||
-                    (column <= ed.Column && column + device.Width >= ed.Column)) 
+                if (NoExistingDevicesWithSameRow(enclosureDevice.Row, d.Row,
+                    device.Height, d.Height))
                 {
-                    existingEnclosureDevices.Add(ed);
+                    return;
+                }
+
+                if (DoesDevicesColumnOverlapWithExistingDevicesColumn(enclosureDevice.Column, 
+                    d.Column, device.Width, d.Width)) 
+                {
+                    existingEnclosureDevices.Add(d);
                 }
             });
 
             return existingEnclosureDevices.Count == 0;
+        }
+
+        private static bool NoExistingDevicesWithSameRow(int deviceRow, int existingDeviceRow, int deviceHeight, int existingDeviceHeight)
+        {
+            return deviceRow != existingDeviceRow && deviceRow != existingDeviceRow + existingDeviceHeight - 1 &&
+                   deviceRow + deviceHeight - 1 != existingDeviceRow;
+        }
+        
+        private static bool DoesDevicesColumnOverlapWithExistingDevicesColumn(int deviceColumn, int existingDeviceColumn, int deviceWidth, int existingDeviceWidth)
+        {
+            return (deviceColumn >= existingDeviceColumn && deviceColumn <= (existingDeviceColumn + existingDeviceWidth - 1)) ||
+                   (deviceColumn <= existingDeviceColumn && (deviceColumn + deviceWidth - 1) >= existingDeviceColumn);
         }
         
         private static bool DoesProjectExist(int projectId)

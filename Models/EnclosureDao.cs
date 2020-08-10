@@ -8,5 +8,6 @@ namespace Electric.Models
         public string Name { set; get; }
         public DateTime Date { set; get; }
         public int ProjectId { set; get; }
+        public float? TotalPrice { set; get; }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Electric.Domain;
 using Electric.Models;
 using Microsoft.AspNetCore.Http;
@@ -45,7 +46,14 @@ namespace Electric.Controllers
                 return NotFound("Enclosure with that ProjectID doesn't exist!");
             }
             
-            return _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice);
+            var enclosureWithDevice = _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice);
+
+            Task.Run(() =>
+            {
+                _enclosure.CalculateTotalPrice(enclosure, null);
+            });
+
+            return enclosureWithDevice;
         }
         
         [HttpGet]
@@ -125,7 +133,14 @@ namespace Electric.Controllers
                 return NotFound("Enclosure with that ProjectID doesn't exist!");
             }
             
-            return _enclosure.RemoveDevice(projectId, enclosureId, deviceId);
+            var enclosureWithDevice = _enclosure.RemoveDevice(projectId, enclosureId, deviceId);
+
+            Task.Run(() =>
+            {
+                _enclosure.CalculateTotalPrice(enclosure, null);
+            });
+
+            return enclosureWithDevice;
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Electric.Models
         public DateTime Date { set; get; }
         public int ProjectId { set; get; }
         public List<Device> Devices { set; get; }
-        public float TotalPrice { set; get; }
+        public float? TotalPrice { set; get; }
         public EnclosureSpecs EnclosureSpecs { set; get; }
     }
 }

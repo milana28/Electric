@@ -21,7 +21,8 @@ CREATE TABLE Electric.EnclosureSpecs (
     rows INT NOT NULL,
     columns INT NOT NULL,
     enclosureId INT NOT NULL,
-    FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id) ON DELETE CASCADE                            
+    FOREIGN KEY (enclosureId) REFERENCES Electric.Enclosure(id) ON DELETE CASCADE,
+    totalPrice FLOAT                            
 );
 
 CREATE TABLE Electric.Device (
