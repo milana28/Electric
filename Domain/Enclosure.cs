@@ -211,7 +211,7 @@ namespace Electric.Domain
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
             return (enclosureDevice.Row <= enclosure.EnclosureSpecs.Rows && enclosureDevice.Column <= enclosure.EnclosureSpecs.Columns) &&
-                   (device.Height <= enclosure.EnclosureSpecs.Rows && enclosureDevice.Column + device.Width <= enclosure.EnclosureSpecs.Columns);
+                   ((enclosureDevice.Row + device.Height - 1) <= enclosure.EnclosureSpecs.Rows && (enclosureDevice.Column + device.Width - 1) <= enclosure.EnclosureSpecs.Columns);
         }
 
         private bool CheckIfPositionIsAvailable(int enclosureId, Enclosure_Device enclosureDevice)
@@ -230,8 +230,8 @@ namespace Electric.Domain
                 var deviceForEd = _device.GetDeviceById(ed.DeviceId);
                 if (row != ed.Row && row != ed.Row + deviceForEd.Height - 1 &&
                     row + device.Height - 1 != ed.Row) return;
-                if ((column >= ed.Column && column <= ed.Column + deviceForEd.Width) ||
-                    (column <= ed.Column && column + device.Width >= ed.Column + deviceForEd.Width)) 
+                if ((column >= ed.Column && column <= (ed.Column + deviceForEd.Width - 1)) ||
+                    (column <= ed.Column && column + device.Width >= ed.Column)) 
                 {
                     existingEnclosureDevices.Add(ed);
                 }
