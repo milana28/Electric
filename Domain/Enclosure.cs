@@ -175,22 +175,6 @@ namespace Electric.Domain
             };
         }
 
-        public float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceWithPosition>? deviceWithPosition)
-        {
-            var totalPrice = new float();
-            var devices = _device.GetDevicesForEnclosure(enclosure.Id);
-            if (deviceWithPosition == null)
-            {
-                devices.ForEach(el => totalPrice += el.Price);
-            }
-            else
-            {
-                deviceWithPosition.ForEach(el => totalPrice += el.Price);
-            }
-            
-            return totalPrice;
-        }
-        
         public void RecalculateTotalPrice(Models.Enclosure enclosure)
         {
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
@@ -214,6 +198,22 @@ namespace Electric.Domain
             };
 
             return enclosure;
+        }
+        
+        private float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceWithPosition>? deviceWithPosition)
+        {
+            var totalPrice = new float();
+            var devices = _device.GetDevicesForEnclosure(enclosure.Id);
+            if (deviceWithPosition == null)
+            {
+                devices.ForEach(el => totalPrice += el.Price);
+            }
+            else
+            {
+                deviceWithPosition.ForEach(el => totalPrice += el.Price);
+            }
+            
+            return totalPrice;
         }
 
         private bool CheckIfRowsAndColumnsAreSuitableForEnclosure(int enclosureId, Enclosure_Device enclosureDevice)
