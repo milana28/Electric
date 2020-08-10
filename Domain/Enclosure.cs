@@ -205,6 +205,7 @@ namespace Electric.Domain
         {
             var enclosure = GetEnclosureById(enclosureId);
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
+            
             return (enclosureDevice.Row <= enclosure.EnclosureSpecs.Rows && 
                     enclosureDevice.Column <= enclosure.EnclosureSpecs.Columns) &&
                    ((enclosureDevice.Row + device.Height - 1) <= enclosure.EnclosureSpecs.Rows && 
