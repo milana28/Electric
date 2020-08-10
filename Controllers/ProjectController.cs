@@ -50,7 +50,7 @@ namespace Electric.Controllers
 
             Task.Run(() =>
             {
-                _enclosure.CalculateTotalPrice(enclosure, null);
+                _enclosure.RecalculateTotalPrice(enclosure);
             });
 
             return enclosureWithDevice;
@@ -137,7 +137,7 @@ namespace Electric.Controllers
 
             Task.Run(() =>
             {
-                _enclosure.CalculateTotalPrice(enclosure, null);
+                _enclosure.RecalculateTotalPrice(enclosure);
             });
 
             return enclosureWithDevice;

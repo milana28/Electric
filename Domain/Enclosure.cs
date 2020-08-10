@@ -19,7 +19,7 @@ namespace Electric.Domain
         Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice);
         Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId);
         Enclosure_DeviceDto GetEnclosureWithDevicePosition(int enclosureId, int deviceId);
-        float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceWithPosition>? deviceWithPosition);
+        void RecalculateTotalPrice(Models.Enclosure enclosure);
     }
     
     public class Enclosure : IEnclosure
@@ -121,9 +121,6 @@ namespace Electric.Domain
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID, @row, @column)";
             database.Execute(insertEnclosureDevice, 
                 new {enclosureID = enclosureId, deviceID = enclosureDevice.DeviceId, row = enclosureDevice.Row, column = enclosureDevice.Column});
-            const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
-            database.Execute(updateEnclosure, 
-                new {enclosureID = enclosureId, totalPrice = CalculateTotalPrice(enclosure, null)});
 
             var devices = _device.GetDevicesForEnclosure(enclosureId);
 
@@ -146,10 +143,7 @@ namespace Electric.Domain
             using IDbConnection database = new SqlConnection(DatabaseConnectionString);
             const string enclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
             database.Execute(enclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
-            const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
-            database.Execute(updateEnclosure, 
-                new {enclosureID = enclosureId, totalPrice = CalculateTotalPrice(enclosure, null)});
-            
+
             var devices = _device.GetDevicesForEnclosure(enclosureId);
 
             return  new Models.Enclosure()
@@ -195,6 +189,14 @@ namespace Electric.Domain
             }
             
             return totalPrice;
+        }
+        
+        public void RecalculateTotalPrice(Models.Enclosure enclosure)
+        {
+            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
+            database.Execute(updateEnclosure, 
+                new {enclosureID = enclosure.Id, totalPrice = CalculateTotalPrice(enclosure, null)});
         }
 
         private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
