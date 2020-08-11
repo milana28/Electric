@@ -64,5 +64,21 @@ namespace Electric.Controllers
 
             return _enclosure.DeleteEnclosure(id);
         }
+        
+        [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<Models.Enclosure> UpdateEnclosure(int id, Models.Enclosure enclosureDao)
+        {
+            var enclosure = _enclosure.GetEnclosureById(id);
+            if (enclosure == null)
+            {
+                return NotFound();
+            }
+
+            return _enclosure.UpdateEnclosure(id, enclosureDao.Name, enclosureDao.EnclosureSpecs.Rows, enclosureDao.EnclosureSpecs.Columns);
+        }
+        
     }
 }

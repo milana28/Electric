@@ -21,6 +21,7 @@ namespace Electric.Domain
         Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId);
         Enclosure_DeviceDto GetEnclosureWithDevicePosition(int enclosureId, int deviceId);
         void RecalculateTotalPrice(Models.Enclosure enclosure);
+        Models.Enclosure UpdateEnclosure(int enclosureId, string name, int rows, int columns);
     }
     
     public class Enclosure : IEnclosure
@@ -185,6 +186,22 @@ namespace Electric.Domain
                 new {enclosureID = enclosure.Id, totalPrice = CalculateTotalPrice(enclosure, null)});
         }
 
+        public Models.Enclosure UpdateEnclosure(int enclosureId, string name, int rows, int columns)
+        {
+            if (!CheckIfEnclosureSpecsIsAppropriate(enclosureId, rows, columns))
+            {
+                return null;
+            }
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
+            const string updateEnclosureSpecs = "UPDATE Electric.EnclosureSpecs SET rows = @numberOfRows, columns = @numberOfColumns WHERE enclosureId = @enclosureID";
+            database.Execute(updateEnclosureSpecs, new {enclosureID = enclosureId, numberOfRows = rows, numberOfColumns = columns});
+      
+            const string updateEnclosure = "UPDATE Electric.Enclosure SET name = @newName WHERE id = @enclosureID";
+            database.Execute(updateEnclosure, new {enclosureID = enclosureId, newName = name});
+
+            return GetEnclosureById(enclosureId);
+        }
+
         private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
         {
             var devices = _device.GetDevicesForEnclosure(enclosureDao.Id);
@@ -200,6 +217,39 @@ namespace Electric.Domain
             };
 
             return enclosure;
+        }
+
+        private static bool CheckIfEnclosureSpecsIsAppropriate(int enclosureId, int rows, int columns)
+        {
+            var allColumns = new List<int>();
+            var allRows = new List<int>();
+            var allWidths = new List<int>();
+            var allHeights = new List<int>();
+           
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
+            const string sql = 
+                "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
+            var devicesWithPosition = database.Query<DeviceWithPosition>(sql, new {enclosureID = enclosureId}).ToList();
+            
+            devicesWithPosition.ForEach(dp =>
+            {
+                allColumns.Add(dp.Column);
+                allRows.Add(dp.Row);
+            });
+            
+            var maxColumn = allColumns.Max();
+            var maxRow = allRows.Max();
+            
+            var devicesWithMaxColumn = devicesWithPosition.FindAll(d => d.Column == maxColumn);
+            devicesWithMaxColumn.ForEach(d => allWidths.Add(d.Width));
+            
+            var devicesWithMaxRow = devicesWithPosition.FindAll(d => d.Row == maxRow);
+            devicesWithMaxRow.ForEach(d => allHeights.Add(d.Height));
+            
+            var maxWidth = allWidths.Max();
+            var maxHeight = allHeights.Max();
+
+            return maxColumn <= columns && maxRow <= rows && (maxWidth + maxColumn - 1) <= columns && (maxHeight + maxRow - 1) <= rows;
         }
         
         private float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceWithPosition>? deviceWithPosition)
