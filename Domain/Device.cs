@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Electric.Domain
 {
@@ -20,7 +20,12 @@ namespace Electric.Domain
     
     public class Device : IDevice
     {
-        private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
+        private static IConfiguration _configuration;
+
+        public Device(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
         public Models.Device CreateDevice(Models.Device device)
         {
@@ -33,7 +38,7 @@ namespace Electric.Domain
                 Price = device.Price
             };
             
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string insertQuery = "INSERT INTO Electric.Device VALUES (@name, @width, @height, @amperes, @price); SELECT * FROM Electric.Device WHERE id = SCOPE_IDENTITY()";
             
             return database.QueryFirst<Models.Device>(insertQuery, newDevice);
@@ -41,14 +46,14 @@ namespace Electric.Domain
         
         public List<Models.Device> GetAll()
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             return database.Query<Models.Device>("SELECT * FROM Electric.Device").ToList();
         }
         
         public List<Models.Device> GetDevicesForEnclosure(int enclosureId)
         {
             var devices = new List<Models.Device>();
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql = "SELECT * FROM Electric.Enclosure_Device WHERE enclosureId = @id";
             var enclosureDevices = database.Query<Enclosure_Device>(sql, new {id = enclosureId}).ToList();
             enclosureDevices.ForEach(el => devices.Add(GetDeviceById(el.DeviceId)));
@@ -58,7 +63,7 @@ namespace Electric.Domain
         
         public List<DeviceWithPosition> GetDeviceWithPosition(int enclosureId, int deviceId)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             var device = new Models.Device();
             const string sql =
                 "SELECT ed.enclosureId, d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device AS ed LEFT JOIN Electric.Device AS d ON ed.deviceId = d.id WHERE d.id = @deviceID AND ed.enclosureId = @enclosureID";
@@ -69,7 +74,7 @@ namespace Electric.Domain
 
         public Models.Device GetDeviceById(int id)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql = "SELECT * FROM Electric.Device WHERE id = @deviceId";
             
             return database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
@@ -77,7 +82,7 @@ namespace Electric.Domain
         
         public Models.Device DeleteDevice(int id)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "DELETE FROM Electric.Device WHERE id = @deviceId";
             
             database.Execute(sql, new {deviceId = id});

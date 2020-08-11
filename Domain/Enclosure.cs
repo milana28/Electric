@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Electric.Domain
 {
@@ -24,12 +25,13 @@ namespace Electric.Domain
     
     public class Enclosure : IEnclosure
     {
-        private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
+        private static IConfiguration _configuration;
         private readonly IEnclosureSpecs _enclosureSpecs;
         private readonly IDevice _device;
 
-        public Enclosure(IEnclosureSpecs enclosureSpecs, IDevice device)
+        public Enclosure(IConfiguration configuration, IEnclosureSpecs enclosureSpecs, IDevice device)
         {
+            _configuration = configuration;
             _enclosureSpecs = enclosureSpecs;
             _device = device;
         }
@@ -48,7 +50,7 @@ namespace Electric.Domain
                 ProjectId = enclosure.ProjectId
             };
 
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId); SELECT * FROM Electric.Enclosure WHERE id = SCOPE_IDENTITY()";
           
             return TransformDaoToBusinessLogicEnclosure(database.QueryFirst<EnclosureDao>(insertQuery, enclosureDao));
@@ -62,7 +64,7 @@ namespace Electric.Domain
         public List<Models.Enclosure> GetAll()
         {
             var enclosureList = new List<Models.Enclosure>();
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             var enclosures = database.Query<EnclosureDao>("SELECT * FROM Electric.Enclosure").ToList();
 
             enclosures.ForEach(e => enclosureList.Add(TransformDaoToBusinessLogicEnclosure(e)));
@@ -72,7 +74,7 @@ namespace Electric.Domain
         
         public Models.Enclosure GetEnclosureById(int id)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "SELECT * FROM Electric.Enclosure WHERE id = @enclosureId";
             
             var enclosure = database.QuerySingle<EnclosureDao>(sql, new {enclosureId = id});
@@ -83,7 +85,7 @@ namespace Electric.Domain
         public List<Models.Enclosure> GetEnclosuresByProjectId(int? id)
         {
             var enclosureList = new List<Models.Enclosure>();
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "SELECT * FROM Electric.Enclosure WHERE projectId = @projectId";
             
             var enclosures = database.Query<EnclosureDao>(sql, new {projectId = id}).ToList();
@@ -95,7 +97,7 @@ namespace Electric.Domain
         
         public Models.Enclosure DeleteEnclosure(int id)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "DELETE FROM Electric.Enclosure WHERE id = @enclosureId";
             
             database.Execute(sql, new {enclosureId = id});
@@ -117,7 +119,7 @@ namespace Electric.Domain
             
             var enclosure = GetEnclosureById(enclosureId);
             
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID, @row, @column)";
             database.Execute(insertEnclosureDevice, 
                 new {enclosureID = enclosureId, deviceID = enclosureDevice.DeviceId, row = enclosureDevice.Row, column = enclosureDevice.Column});
@@ -140,7 +142,7 @@ namespace Electric.Domain
         {
             var enclosure = GetEnclosureById(enclosureId);
 
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string enclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
             database.Execute(enclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
 
@@ -177,7 +179,7 @@ namespace Electric.Domain
 
         public void RecalculateTotalPrice(Models.Enclosure enclosure)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
             database.Execute(updateEnclosure, 
                 new {enclosureID = enclosure.Id, totalPrice = CalculateTotalPrice(enclosure, null)});
@@ -238,7 +240,7 @@ namespace Electric.Domain
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
             var existingEnclosureDevices = new List<DeviceWithPosition>();
 
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql = 
                 "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
             var existingDevicesWithPosition = database.Query<DeviceWithPosition>(sql, new {enclosureID = enclosureId}).ToList();
@@ -250,7 +252,6 @@ namespace Electric.Domain
                 {
                     return;
                 }
-
                 if (DoesDevicesColumnOverlapWithExistingDevicesColumn(enclosureDevice.Column, 
                     d.Column, device.Width, d.Width)) 
                 {
@@ -275,7 +276,7 @@ namespace Electric.Domain
         
         private static bool DoesProjectExist(int projectId)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql = "SELECT * FROM Electric.Project WHERE id = @id";
             var project = database.QuerySingle<ProjectDao>(sql, new {id = projectId});
 

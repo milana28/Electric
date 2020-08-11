@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Electric.Domain
 {
@@ -18,11 +19,12 @@ namespace Electric.Domain
     
     public class Project : IProject
     {
-        private const string DatabaseConnectionString = "Server=localhost;Database=electric;User Id=sa;Password=yourStrong(!)Password;";
+        private static IConfiguration _configuration;
         private readonly IEnclosure _enclosure;
 
-        public Project(IEnclosure enclosure)
+        public Project(IConfiguration configuration, IEnclosure enclosure)
         {
+            _configuration = configuration;
             _enclosure = enclosure;
         }
         
@@ -34,7 +36,7 @@ namespace Electric.Domain
                 Date = DateTime.Now
             };
 
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string insertQuery = "INSERT INTO Electric.Project VALUES (@name, @date); SELECT * FROM Electric.Project WHERE id = SCOPE_IDENTITY()";
 
             return TransformDaoToBusinessLogicProject(database.QueryFirst<ProjectDao>(insertQuery, projectDao));
@@ -43,7 +45,7 @@ namespace Electric.Domain
         public List<Models.Project> GetAll()
         {
             var projectList = new List<Models.Project>();
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             var projects = database.Query<ProjectDao>("SELECT * FROM Electric.Project").ToList();
 
             projects.ForEach(p => projectList.Add(TransformDaoToBusinessLogicProject(p)));
@@ -53,7 +55,7 @@ namespace Electric.Domain
         
         public Models.Project GetProjectById(int id)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "SELECT * FROM Electric.Project WHERE id = @projectId";
             
             var project = database.QuerySingle<ProjectDao>(sql, new {projectId = id});
@@ -63,7 +65,7 @@ namespace Electric.Domain
         
         public Models.Project DeleteProject(int id)
         {
-            using IDbConnection database = new SqlConnection(DatabaseConnectionString);
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "DELETE FROM Electric.Project WHERE id = @projectId";
             
             database.Execute(sql, new {projectId = id});
