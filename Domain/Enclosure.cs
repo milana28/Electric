@@ -48,11 +48,11 @@ namespace Electric.Domain
             {
                 Name = enclosure.Name,
                 Date = DateTime.Now,
-                ProjectId = enclosure.ProjectId
+                ProjectId = enclosure.ProjectId,
             };
 
             using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
-            const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId); SELECT * FROM Electric.Enclosure WHERE id = SCOPE_IDENTITY()";
+            const string insertQuery = "INSERT INTO Electric.Enclosure VALUES (@name, @date, @projectId, null) SELECT * FROM Electric.Enclosure WHERE id = SCOPE_IDENTITY()";
           
             return TransformDaoToBusinessLogicEnclosure(database.QueryFirst<EnclosureDao>(insertQuery, enclosureDao));
         }
@@ -231,6 +231,11 @@ namespace Electric.Domain
                 "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
             var devicesWithPosition = database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
             
+            if (devicesWithPosition.Count == 0)
+            {
+                return true;
+            }
+
             devicesWithPosition.ForEach(dp =>
             {
                 allColumns.Add(dp.Column);
