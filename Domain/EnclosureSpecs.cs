@@ -25,7 +25,6 @@ namespace Electric.Domain
         {
             _configuration = configuration;
         }
-        // private delegate bool CheckIfObjectExist(int id);
 
         public Models.EnclosureSpecs CreateEnclosureSpecs(Models.EnclosureSpecs enclosureSpecs)
         {
