@@ -84,7 +84,7 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Enclosure_DeviceDto> GetEnclosureWithDevice(int projectId, int enclosureId, int deviceId)
+        public ActionResult<Models.Enclosure> GetEnclosureWithDevice(int projectId, int enclosureId, int deviceId)
         {
             var enclosure = _enclosure.GetEnclosureById(enclosureId);
             if (enclosure == null)
@@ -97,7 +97,7 @@ namespace Electric.Controllers
                 return NotFound("Enclosure with that ProjectID doesn't exist!");
             }
             
-            return _enclosure.GetEnclosureWithDevicePosition(enclosureId, deviceId);
+            return _enclosure.GetEnclosureWithDevice(enclosureId, deviceId);
         }
 
         

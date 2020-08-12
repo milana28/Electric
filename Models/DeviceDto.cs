@@ -1,6 +1,6 @@
 namespace Electric.Models
 {
-    public class DeviceWithPosition
+    public class DeviceDto
     {
         public int Id { set; get; }
         public string Name { set; get; }
