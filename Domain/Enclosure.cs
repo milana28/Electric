@@ -289,7 +289,7 @@ namespace Electric.Domain
                 enclosure.EnclosureSpecs.Rows, enclosure.EnclosureSpecs.Columns, device.Width, device.Height);
         }
 
-        private static bool AreRowsAndColumnsSuitableForEnclosureDimensions(int deviceRow, int deviceColumn, int enclosureRows,
+        public static bool AreRowsAndColumnsSuitableForEnclosureDimensions(int deviceRow, int deviceColumn, int enclosureRows,
             int enclosureColumns, int deviceWidth, int deviceHeight)
         {
             return (deviceRow <= enclosureRows && deviceColumn <= enclosureColumns) && 
@@ -330,7 +330,7 @@ namespace Electric.Domain
                    deviceRow + deviceHeight - 1 != existingDeviceRow;
         }
         
-        private static bool DoesDevicesColumnOverlapWithExistingDevicesColumn(int deviceColumn, int existingDeviceColumn, int deviceWidth, int existingDeviceWidth)
+        public static bool DoesDevicesColumnOverlapWithExistingDevicesColumn(int deviceColumn, int existingDeviceColumn, int deviceWidth, int existingDeviceWidth)
         {
             return (deviceColumn >= existingDeviceColumn && deviceColumn <= (existingDeviceColumn + existingDeviceWidth - 1)) ||
                    (deviceColumn <= existingDeviceColumn && (deviceColumn + deviceWidth - 1) >= existingDeviceColumn);
