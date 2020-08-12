@@ -33,11 +33,12 @@ namespace Electric.Domain
             var projectDao = new ProjectDao()
             {
                 Name = project.Name,
-                Date = DateTime.Now
+                Date = DateTime.Now,
+                UpdateDate = null
             };
 
             using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
-            const string insertQuery = "INSERT INTO Electric.Project VALUES (@name, @date); SELECT * FROM Electric.Project WHERE id = SCOPE_IDENTITY()";
+            const string insertQuery = "INSERT INTO Electric.Project VALUES (@name, @date, @updateDate); SELECT * FROM Electric.Project WHERE id = SCOPE_IDENTITY()";
 
             return TransformDaoToBusinessLogicProject(database.QueryFirst<ProjectDao>(insertQuery, projectDao));
         }
@@ -72,6 +73,15 @@ namespace Electric.Domain
 
             return GetProjectById(id);
         }
+
+        public static void UpdateProjectDate(int projectId)
+        {
+            var updateDate = DateTime.Now;
+            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
+            const string sql= "UPDATE Electric.Project SET updateDate = @date WHERE id = @id";
+            
+            database.Execute(sql, new {id = projectId, date = updateDate});
+        }
         
         private Models.Project TransformDaoToBusinessLogicProject(ProjectDao projectDao)
         {
@@ -81,6 +91,7 @@ namespace Electric.Domain
                 Id = projectDao.Id,
                 Name = projectDao.Name,
                 Date = projectDao.Date,
+                UpdateDate = projectDao.UpdateDate,
                 Enclosures = enclosures
             };
         }

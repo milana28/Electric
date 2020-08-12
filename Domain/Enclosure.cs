@@ -127,6 +127,8 @@ namespace Electric.Domain
 
             var devices = _device.GetDevicesForEnclosure(enclosureId);
 
+            Project.UpdateProjectDate(projectId);
+            
             return  new Models.Enclosure()
             {
                 Id = enclosureId,
@@ -148,6 +150,8 @@ namespace Electric.Domain
             database.Execute(enclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
 
             var devices = _device.GetDevicesForEnclosure(enclosureId);
+            
+            Project.UpdateProjectDate(projectId);
 
             return  new Models.Enclosure()
             {
@@ -198,8 +202,11 @@ namespace Electric.Domain
       
             const string updateEnclosure = "UPDATE Electric.Enclosure SET name = @newName WHERE id = @enclosureID";
             database.Execute(updateEnclosure, new {enclosureID = enclosureId, newName = name});
+            
+            var enclosure = GetEnclosureById(enclosureId);
+            Project.UpdateProjectDate(enclosure.ProjectId);
 
-            return GetEnclosureById(enclosureId);
+            return enclosure;
         }
 
         private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
@@ -317,7 +324,7 @@ namespace Electric.Domain
             return existingEnclosureDevices.Count == 0;
         }
 
-        private static bool NoExistingDevicesWithSameRow(int deviceRow, int existingDeviceRow, int deviceHeight, int existingDeviceHeight)
+        public static bool NoExistingDevicesWithSameRow(int deviceRow, int existingDeviceRow, int deviceHeight, int existingDeviceHeight)
         {
             return deviceRow != existingDeviceRow && deviceRow != existingDeviceRow + existingDeviceHeight - 1 &&
                    deviceRow + deviceHeight - 1 != existingDeviceRow;

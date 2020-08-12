@@ -5,7 +5,8 @@ CREATE SCHEMA Electric;
 CREATE TABLE Electric.Project (
     id INT PRIMARY KEY IDENTITY,
     name VARCHAR(500) NOT NULL,
-    date DATETIME NOT NULL
+    date DATETIME NOT NULL,
+    updateDate DATETIME
 );
 
 CREATE TABLE Electric.Enclosure (
