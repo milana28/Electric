@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
 using Electric.Utils;
-using Microsoft.Extensions.Configuration;
 
 namespace Electric.Domain
 {
@@ -104,14 +102,14 @@ namespace Electric.Domain
 
         public Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
-            const string sql = 
-                "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
-            var existingDevicesWithPosition = _database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
-            
             if (!CheckIfRowsAndColumnsAreSuitableForEnclosure(enclosureId, enclosureDevice))
             {
                 return null;
             }
+            
+            const string sql = 
+                "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
+            var existingDevicesWithPosition = _database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
 
             if (!CheckIfPositionIsAvailable(existingDevicesWithPosition, enclosureDevice))
             {
@@ -189,7 +187,11 @@ namespace Electric.Domain
 
         public Models.Enclosure UpdateEnclosure(int enclosureId, string name, int rows, int columns)
         {
-            if (!CheckIfEnclosureSpecsIsAppropriate(enclosureId, rows, columns))
+            const string sql = 
+                "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
+            var devicesWithPosition = _database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
+            
+            if (!CheckIfEnclosureSpecsIsAppropriate(devicesWithPosition, rows, columns))
             {
                 return null;
             }
@@ -223,17 +225,13 @@ namespace Electric.Domain
             return enclosure;
         }
 
-        private bool CheckIfEnclosureSpecsIsAppropriate(int enclosureId, int rows, int columns)
+        public static bool CheckIfEnclosureSpecsIsAppropriate(List<DeviceDto> devicesWithPosition, int rows, int columns)
         {
             var allColumns = new List<int>();
             var allRows = new List<int>();
             var allWidths = new List<int>();
             var allHeights = new List<int>();
-            
-            const string sql = 
-                "SELECT d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device as ed LEFT JOIN Electric.Device as d ON d.id = ed.deviceId WHERE enclosureId = @enclosureID";
-            var devicesWithPosition = _database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
-            
+
             if (devicesWithPosition.Count == 0)
             {
                 return true;
