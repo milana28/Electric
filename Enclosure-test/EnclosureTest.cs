@@ -10,12 +10,6 @@ namespace Enclosure_test
 {
     public class EnclosureTest
     {
-        // public static IEnumerable<object[]> Data => {
-        //     yield return new object[] { devices, 1, 2 };
-        //     yield return new object[] { devices, 1, 2 };
-        //     yield return new object[] { devices, 1, 2 };
-        // }
-        
         public static IEnumerable<object[]> GetDevicesTrue()
         {
             yield return new object[] { Devices, 6, 6 };
