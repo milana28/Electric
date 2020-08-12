@@ -33,7 +33,7 @@ namespace Electric.Controllers
         {
             return _device.GetAll();
         }
-        
+
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
