@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Electric.Utils;
 using Microsoft.Extensions.Configuration;
 
 namespace Electric.Domain
@@ -19,11 +20,11 @@ namespace Electric.Domain
     
     public class EnclosureSpecs : IEnclosureSpecs
     {
-        private static IConfiguration _configuration;
+        private static IDbConnection _database;
 
-        public EnclosureSpecs(IConfiguration configuration)
+        public EnclosureSpecs(IDatabase database)
         {
-            _configuration = configuration;
+            _database = database.Get();
         }
 
         public Models.EnclosureSpecs CreateEnclosureSpecs(Models.EnclosureSpecs enclosureSpecs)
@@ -40,51 +41,41 @@ namespace Electric.Domain
                 EnclosureId = enclosureSpecs.EnclosureId
             };
             
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string insertQuery = 
                 "INSERT INTO Electric.EnclosureSpecs VALUES (@rows, @columns, @enclosureId); SELECT * FROM Electric.EnclosureSpecs WHERE id = SCOPE_IDENTITY()";
 
-            return database.QueryFirst<Models.EnclosureSpecs>(insertQuery, newEnclosureSpecs);
+            return _database.QueryFirst<Models.EnclosureSpecs>(insertQuery, newEnclosureSpecs);
         }
         
         public List<Models.EnclosureSpecs> GetAll()
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
-            return database.Query<Models.EnclosureSpecs>("SELECT * FROM Electric.EnclosureSpecs").ToList();
+            return _database.Query<Models.EnclosureSpecs>("SELECT * FROM Electric.EnclosureSpecs").ToList();
         }
         
         public Models.EnclosureSpecs GetEnclosureSpecsById(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "SELECT * FROM Electric.EnclosureSpecs WHERE id = @enclosureSpecsId";
-            
-            return database.QuerySingle<Models.EnclosureSpecs>(sql, new {enclosureSpecsId = id});
+            return _database.QuerySingle<Models.EnclosureSpecs>(sql, new {enclosureSpecsId = id});
         }
         
         public Models.EnclosureSpecs GetEnclosureSpecsByEnclosureId(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "SELECT * FROM Electric.EnclosureSpecs WHERE enclosureId = @enclosureId";
-            var enclosureSpecs = database.QueryFirstOrDefault<Models.EnclosureSpecs>(sql, new {enclosureId = id});
-
-            return enclosureSpecs;
+            return  _database.QueryFirstOrDefault<Models.EnclosureSpecs>(sql, new {enclosureId = id});
         }
         
         public Models.EnclosureSpecs DeleteEnclosureSpecs(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "DELETE FROM Electric.EnclosureSpecs WHERE id = @deviceId";
-            
-            database.Execute(sql, new {deviceId = id});
+            _database.Execute(sql, new {deviceId = id});
 
             return GetEnclosureSpecsById(id);
         }
 
         private static bool DoesEnclosureExist(int enclosureId)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql = "SELECT * FROM Electric.Enclosure WHERE id = @id";
-            var enclosure = database.QuerySingle<EnclosureDao>(sql, new {id = enclosureId});
+            var enclosure = _database.QuerySingle<EnclosureDao>(sql, new {id = enclosureId});
 
             return enclosure != null;
         }

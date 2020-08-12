@@ -1,4 +1,5 @@
 using Electric.Domain;
+using Electric.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +23,7 @@ namespace Electric
             services.AddSingleton<IProject, Project>();
             services.AddSingleton<IEnclosure, Enclosure>();
             services.AddSingleton<IEnclosureSpecs, EnclosureSpecs>();
+            services.AddSingleton<IDatabase, Database>();
             services.AddSingleton<IDevice, Device>();
             services.AddSwaggerGen();
         }

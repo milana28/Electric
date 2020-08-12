@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
+using Electric.Utils;
 using Microsoft.Extensions.Configuration;
 
 namespace Electric.Domain
@@ -20,11 +21,11 @@ namespace Electric.Domain
     
     public class Device : IDevice
     {
-        private static IConfiguration _configuration;
+        private static IDbConnection _database;
 
-        public Device(IConfiguration configuration)
+        public Device(IDatabase database)
         {
-            _configuration = configuration;
+            _database = database.Get();
         }
 
         public Models.Device CreateDevice(Models.Device device)
@@ -38,52 +39,40 @@ namespace Electric.Domain
                 Price = device.Price
             };
             
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string insertQuery = 
                 "INSERT INTO Electric.Device VALUES (@name, @width, @height, @amperes, @price); SELECT * FROM Electric.Device WHERE id = SCOPE_IDENTITY()";
             
-            return database.QueryFirst<Models.Device>(insertQuery, newDevice);
+            return _database.QueryFirst<Models.Device>(insertQuery, newDevice);
         }
         
         public List<Models.Device> GetAll()
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
-            return database.Query<Models.Device>("SELECT * FROM Electric.Device").ToList();
+            return _database.Query<Models.Device>("SELECT * FROM Electric.Device").ToList();
         }
      
         public List<DeviceDto> GetDevicesForEnclosure(int enclosureId)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql =
                 "SELECT ed.enclosureId, d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device AS ed LEFT JOIN Electric.Device AS d ON ed.deviceId = d.id WHERE ed.enclosureId = @enclosureID";
-            var devicesWithPosition = database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
-
-            return devicesWithPosition;
+            return  _database.Query<DeviceDto>(sql, new {enclosureID = enclosureId}).ToList();
         }
         public List<DeviceDto> GetDeviceForEnclosureById(int enclosureId, int deviceId)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql =
                 "SELECT ed.enclosureId, d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device AS ed LEFT JOIN Electric.Device AS d ON ed.deviceId = d.id WHERE d.id = @deviceID AND ed.enclosureId = @enclosureID";
-            var devicesWithPosition = database.Query<DeviceDto>(sql, new {deviceID = deviceId, enclosureID = enclosureId}).ToList();
-
-            return devicesWithPosition;
+            return  _database.Query<DeviceDto>(sql, new {deviceID = deviceId, enclosureID = enclosureId}).ToList();
         }
 
         public Models.Device GetDeviceById(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql = "SELECT * FROM Electric.Device WHERE id = @deviceId";
-            
-            return database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
+            return _database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
         }
         
         public Models.Device DeleteDevice(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "DELETE FROM Electric.Device WHERE id = @deviceId";
-            
-            database.Execute(sql, new {deviceId = id});
+            _database.Execute(sql, new {deviceId = id});
 
             return GetDeviceById(id);
         }

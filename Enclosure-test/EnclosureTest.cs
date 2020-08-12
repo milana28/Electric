@@ -70,6 +70,7 @@ namespace Enclosure_test
         {
             var result = Enclosure.DoesDevicesColumnOverlapWithExistingDevicesColumn(deviceColumn, existingDeviceColumn,
                 deviceWidth, existingDeviceWidth);
+            
             Assert.False(result, "Can place device on enclosure");
         }
     }

@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
 using Electric.Models;
-using Microsoft.Extensions.Configuration;
+using Electric.Utils;
 
 namespace Electric.Domain
 {
@@ -19,12 +18,12 @@ namespace Electric.Domain
     
     public class Project : IProject
     {
-        private static IConfiguration _configuration;
         private readonly IEnclosure _enclosure;
+        private static IDbConnection _database;
 
-        public Project(IConfiguration configuration, IEnclosure enclosure)
+        public Project(IDatabase database, IEnclosure enclosure)
         {
-            _configuration = configuration;
+            _database = database.Get();
             _enclosure = enclosure;
         }
         
@@ -36,18 +35,17 @@ namespace Electric.Domain
                 Date = DateTime.Now,
                 UpdateDate = null
             };
-
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
+            
             const string insertQuery = "INSERT INTO Electric.Project VALUES (@name, @date, @updateDate); SELECT * FROM Electric.Project WHERE id = SCOPE_IDENTITY()";
 
-            return TransformDaoToBusinessLogicProject(database.QueryFirst<ProjectDao>(insertQuery, projectDao));
+            return TransformDaoToBusinessLogicProject(_database.QueryFirst<ProjectDao>(insertQuery, projectDao));
         }
 
         public List<Models.Project> GetAll()
         {
             var projectList = new List<Models.Project>();
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
-            var projects = database.Query<ProjectDao>("SELECT * FROM Electric.Project").ToList();
+         
+            var projects = _database.Query<ProjectDao>("SELECT * FROM Electric.Project").ToList();
 
             projects.ForEach(p => projectList.Add(TransformDaoToBusinessLogicProject(p)));
 
@@ -56,20 +54,16 @@ namespace Electric.Domain
         
         public Models.Project GetProjectById(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "SELECT * FROM Electric.Project WHERE id = @projectId";
-            
-            var project = database.QuerySingle<ProjectDao>(sql, new {projectId = id});
+            var project = _database.QuerySingle<ProjectDao>(sql, new {projectId = id});
 
             return TransformDaoToBusinessLogicProject(project);
         }
         
         public Models.Project DeleteProject(int id)
         {
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
             const string sql= "DELETE FROM Electric.Project WHERE id = @projectId";
-            
-            database.Execute(sql, new {projectId = id});
+            _database.Execute(sql, new {projectId = id});
 
             return GetProjectById(id);
         }
@@ -77,10 +71,9 @@ namespace Electric.Domain
         public static void UpdateProjectDate(int projectId)
         {
             var updateDate = DateTime.Now;
-            using IDbConnection database = new SqlConnection(_configuration.GetConnectionString("MyConnectionString"));
+          
             const string sql= "UPDATE Electric.Project SET updateDate = @date WHERE id = @id";
-            
-            database.Execute(sql, new {id = projectId, date = updateDate});
+            _database.Execute(sql, new {id = projectId, date = updateDate});
         }
         
         private Models.Project TransformDaoToBusinessLogicProject(ProjectDao projectDao)
