@@ -1,4 +1,11 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.Loader;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Electric.Domain;
+using Electric.Pdf;
 using Electric.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -15,8 +22,9 @@ namespace Electric
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
-        
+        private IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
@@ -26,6 +34,10 @@ namespace Electric
             services.AddSingleton<IDatabase, Database>();
             services.AddSingleton<IDevice, Device>();
             services.AddSwaggerGen();
+            
+            var context = new CustomAssemblyLoadContext(); 
+            context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "libwkhtmltox.so"));
+            services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

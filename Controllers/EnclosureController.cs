@@ -1,6 +1,10 @@
 using System.Collections.Generic;
+using System.IO;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Electric.Domain;
 using Electric.Models;
+using Electric.Pdf;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +15,14 @@ namespace Electric.Controllers
     public class EnclosureController : ControllerBase
     {
         private readonly IEnclosure _enclosure;
+        private readonly IConverter _converter;
+        private readonly IEnclosureSpecs _enclosureSpecs;
 
-        public EnclosureController(IEnclosure enclosure)
+        public EnclosureController(IEnclosure enclosure, IConverter converter, IEnclosureSpecs enclosureSpecs)
         {
             _enclosure = enclosure;
+            _converter = converter;
+            _enclosureSpecs = enclosureSpecs;
         }
         
         [HttpPost]
@@ -80,5 +88,43 @@ namespace Electric.Controllers
             return _enclosure.UpdateEnclosure(id, enclosureDao.Name, enclosureDao.EnclosureSpecs.Rows, enclosureDao.EnclosureSpecs.Columns);
         }
         
+       
+        [HttpGet("pdf")]
+        public IActionResult CreatePdf()
+        {
+            var enclosures = _enclosure.GetAll();
+            var globalSettings = new GlobalSettings
+            {
+                ColorMode = ColorMode.Color,
+                Orientation = Orientation.Portrait,
+                PaperSize = PaperKind.A4,
+                Margins = new MarginSettings { Top = 10 },
+                DocumentTitle = "PDF Report",
+                // Out = @"D:\PDFCreator\Enclosure.pdf"
+            };
+            
+            var objectSettings = new ObjectSettings
+            {
+                PagesCount = true,
+                HtmlContent = TemplateGenerator.GetHtmlString(enclosures),
+                WebSettings = { DefaultEncoding = "utf-8", UserStyleSheet =  Path.Combine(Directory.GetCurrentDirectory(), "Assets", "style.css") },
+                HeaderSettings = { FontName = "Arial", FontSize = 9, Right = "Page [page] of [toPage]", Line = true },
+                FooterSettings = { FontName = "Arial", FontSize = 9, Line = true, Center = "Report Footer" }
+            };
+ 
+            var pdf = new HtmlToPdfDocument()
+            {
+                GlobalSettings = globalSettings,
+                Objects = { objectSettings }
+            };
+           
+            // var converter = new SynchronizedConverter(new PdfTools());
+ 
+            // _converter.Convert(pdf);
+            //
+            // return Ok("Successfully created PDF document.");
+            var file = _converter.Convert(pdf);
+            return File(file, "application/pdf");
+        }
     }
 }
