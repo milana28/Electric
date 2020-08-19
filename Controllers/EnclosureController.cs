@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Electric.Domain;
 using Electric.Models;
 using Electric.Pdf;
+using IronPdf;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -109,7 +112,7 @@ namespace Electric.Controllers
                 HtmlContent = TemplateGenerator.GetHtmlString(enclosures),
                 WebSettings = { DefaultEncoding = "utf-8", UserStyleSheet =  Path.Combine(Directory.GetCurrentDirectory(), "Assets", "style.css") },
                 HeaderSettings = { FontName = "Arial", FontSize = 9, Right = "Page [page] of [toPage]", Line = true },
-                FooterSettings = { FontName = "Arial", FontSize = 9, Line = true, Center = "Report Footer" }
+                // FooterSettings = { FontName = "Arial", FontSize = 9, Line = true, Center = "Report Footer" }
             };
  
             var pdf = new HtmlToPdfDocument()
@@ -117,14 +120,36 @@ namespace Electric.Controllers
                 GlobalSettings = globalSettings,
                 Objects = { objectSettings }
             };
-           
-            // var converter = new SynchronizedConverter(new PdfTools());
- 
-            // _converter.Convert(pdf);
-            //
-            // return Ok("Successfully created PDF document.");
+          
             var file = _converter.Convert(pdf);
             return File(file, "application/pdf");
+        }
+     
+        [HttpGet("pdf/image")]
+        public FileResult CreateImagePdf()
+        {
+            var renderer = new HtmlToPdf
+            {
+                PrintOptions =
+                {
+                    MarginTop = 5,
+                    MarginBottom = 5,
+                    CssMediaType = PdfPrintOptions.PdfCssMediaType.Print,
+                    Header = new SimpleHeaderFooter()
+                    {
+                        CenterText = "Enclosure", DrawDividerLine = true, FontSize = 16
+                    },
+                    Footer = new SimpleHeaderFooter()
+                    {
+                        LeftText = "{date} {time}",
+                        RightText = "Page {page} of {total-pages}",
+                        DrawDividerLine = true,
+                        FontSize = 14
+                    }
+                }
+            };
+            var pdf = renderer.RenderHTMLFileAsPdf("Assets/pdf.html");
+            return File(pdf.BinaryData, "application/pdf;");
         }
     }
 }

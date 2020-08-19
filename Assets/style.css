@@ -9,6 +9,7 @@
 table {
     width: 80%;
     border-collapse: collapse;
+    text-align: center;
 }
 
 td, th {
@@ -21,4 +22,8 @@ td, th {
 table th {
     background-color: green;
     color: white;
+}
+
+.image {
+    width: 80%;
 }
