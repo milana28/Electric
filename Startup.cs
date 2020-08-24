@@ -32,8 +32,10 @@ namespace Electric
             services.AddSingleton<IEnclosureSpecs, EnclosureSpecs>();
             services.AddSingleton<IDatabase, Database>();
             services.AddSingleton<IDevice, Device>();
+            services.AddSingleton<TemplateGenerator>();
             services.AddSwaggerGen();
-            
+            services.AddRazorPages();
+
             var context = new CustomAssemblyLoadContext(); 
             context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "libwkhtmltox.so"));
             services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
@@ -43,6 +45,7 @@ namespace Electric
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseSwagger();
+            app.UseStaticFiles();
             app.UseStaticFiles(new StaticFileOptions()
             {
                 FileProvider = new PhysicalFileProvider(
@@ -66,7 +69,11 @@ namespace Electric
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                endpoints.MapRazorPages();
+            });
         }
     }
 }

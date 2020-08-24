@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Electric.Domain;
@@ -19,13 +20,13 @@ namespace Electric.Controllers
     {
         private readonly IEnclosure _enclosure;
         private readonly IConverter _converter;
-        private readonly IEnclosureSpecs _enclosureSpecs;
+        private readonly TemplateGenerator _template;
 
-        public EnclosureController(IEnclosure enclosure, IConverter converter, IEnclosureSpecs enclosureSpecs)
+        public EnclosureController(IEnclosure enclosure, IConverter converter, TemplateGenerator templateGenerator)
         {
             _enclosure = enclosure;
             _converter = converter;
-            _enclosureSpecs = enclosureSpecs;
+            _template = templateGenerator;
         }
         
         [HttpPost]
@@ -93,7 +94,7 @@ namespace Electric.Controllers
         
        
         [HttpGet("pdf")]
-        public IActionResult CreatePdf()
+        public async Task<IActionResult> CreatePdf()
         {
             var enclosures = _enclosure.GetAll();
             var globalSettings = new GlobalSettings
@@ -109,8 +110,8 @@ namespace Electric.Controllers
             var objectSettings = new ObjectSettings
             {
                 PagesCount = true,
-                HtmlContent = TemplateGenerator.GetHtmlString(enclosures),
-                WebSettings = { DefaultEncoding = "utf-8", UserStyleSheet =  Path.Combine(Directory.GetCurrentDirectory(), "Assets", "style.css") },
+                HtmlContent = await _template.GetHtmlString(enclosures),
+                WebSettings = { DefaultEncoding = "utf-8", UserStyleSheet =  Path.Combine(Directory.GetCurrentDirectory(), "Assets", "Style.css") },
                 HeaderSettings = { FontName = "Arial", FontSize = 9, Right = "Page [page] of [toPage]", Line = true },
                 // FooterSettings = { FontName = "Arial", FontSize = 9, Line = true, Center = "Report Footer" }
             };

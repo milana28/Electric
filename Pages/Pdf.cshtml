@@ -1,0 +1,35 @@
+@using Electric.Pages
+@model Pdf
+
+<!DOCTYPE html>
+
+<html lang="">
+<head>
+    <link rel="stylesheet" href="../Assets/Style.css" type="text/css" />
+    <title>Enclosures</title>
+</head>
+<body>
+
+<div class="header"><h1>ENCLOSURES</h1></div>
+<table align="center">
+    <tr>
+        <th>Name</th>
+        <th>Date</th>
+        <th>ProjectId</th>
+        <th>Total price</th>
+    </tr>
+
+@foreach (var enclosure in Model.Enclosures)
+    {
+        <tr>
+            <td>@enclosure.Name</td>
+            <td>@enclosure.Date</td>
+            <td>@enclosure.ProjectId</td>
+            <td>@enclosure.TotalPrice</td>
+        </tr>
+    }
+</table>
+
+<img src="Assets/image.png" width="50" height="50" alt="" />     
+</body>
+</html>
