@@ -9,13 +9,7 @@ namespace Electric.Pdf
 {
     public class TemplateGenerator
     {
-        private readonly IEnclosure _enclosure;
-        public TemplateGenerator(IEnclosure enclosure)
-        {
-            _enclosure = enclosure;
-        }
-        
-        public async Task<string> GetHtmlString(List<Enclosure> enclosures)
+        public static async Task<string> GetHtmlString(List<Enclosure> enclosures)
         {
             var engine = new RazorLightEngineBuilder()
                 .UseEmbeddedResourcesProject(typeof(Enclosure)) 

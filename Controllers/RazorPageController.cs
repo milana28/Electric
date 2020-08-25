@@ -31,7 +31,7 @@ namespace Electric.Controllers
             return new ContentResult {
                 ContentType = "text/html",
                 StatusCode = (int) HttpStatusCode.OK,
-                Content = await _template.GetHtmlString(enclosures),
+                Content = await TemplateGenerator.GetHtmlString(enclosures),
             };
         }
     }
