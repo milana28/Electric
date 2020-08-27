@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Electric.Domain;
 using RazorLight;
 using Enclosure = Electric.Models.Enclosure;
 
@@ -9,7 +8,7 @@ namespace Electric.Pdf
 {
     public class TemplateGenerator
     {
-        public static async Task<string> GetHtmlString(List<Enclosure> enclosures)
+        public async Task<string> GetHtmlString(List<Enclosure> enclosures)
         {
             var engine = new RazorLightEngineBuilder()
                 .UseEmbeddedResourcesProject(typeof(Enclosure)) 

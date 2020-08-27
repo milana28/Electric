@@ -11,7 +11,7 @@ namespace Electric.Csv
             var columnNames = GetColumnNames();
             var builder = new StringBuilder();
 
-            builder.AppendJoin(";", columnNames);
+            builder.AppendJoin(",", columnNames);
             builder.AppendLine();
 
 

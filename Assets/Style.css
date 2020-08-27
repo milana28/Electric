@@ -25,5 +25,6 @@ table th {
 }
 
 .image {
-    width: 80%;
+    width: 500px;
+    height: 700px;
 }

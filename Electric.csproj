@@ -30,14 +30,20 @@
 
 <ItemGroup>
     <None Remove="Assets\style.css" />
+<None Remove="Assets\image.png" />
     <None Remove="libwkhtmltox.so" />
     <None Include="wwwroot\*" />
   </ItemGroup>
 
   <ItemGroup>
-   <Content Include="Assets\Style.css">
+    <Content Include="Assets\Style.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+
+    <Content Include="Assets\image.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+
     <Content Include="libwkhtmltox.so">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
