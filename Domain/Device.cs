@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
+using Electric.Exceptions;
 using Electric.Models;
 using Electric.Utils;
 
@@ -61,14 +62,27 @@ namespace Electric.Domain
         public Models.Device GetDeviceById(int id)
         {
             const string sql = "SELECT * FROM Electric.Device WHERE id = @deviceId";
-            return _database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
+            var device =  _database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
+
+            if (device == null)
+            {
+                throw new DeviceNotFoundException("Device does not exist!");
+            }
+
+            return device;
         }
         public Models.Device DeleteDevice(int id)
         {
+            var device = GetDeviceById(id);
+            if (device == null)
+            {
+                throw new DeviceNotFoundException("Device does not exist!");
+            }
+            
             const string sql= "DELETE FROM Electric.Device WHERE id = @deviceId";
             _database.Execute(sql, new {deviceId = id});
 
-            return GetDeviceById(id);
+            return device;
         }
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DinkToPdf;
 using DinkToPdf.Contracts;
@@ -41,7 +40,7 @@ namespace Electric.Controllers
         {
             try
             {
-                return _enclosure.CreateEnclosure(enclosure);
+                return Created("https://localhost:5001/Enclosure", _enclosure.CreateEnclosure(enclosure));
             }
             catch (ProjectNotFountException ex)
             {
@@ -52,16 +51,22 @@ namespace Electric.Controllers
                 _logger.LogError("Error", ex);
                 return BadRequest();
             }
-            
         }
         
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<List<Models.Enclosure>> GetEnclosures([FromQuery(Name = "projectId")] int? projectId)
         {
-            return _enclosure.GetEnclosures(projectId);
+            try
+            {
+                return Ok(_enclosure.GetEnclosures(projectId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpGet("{id}")]
@@ -72,7 +77,7 @@ namespace Electric.Controllers
         {
             try
             {
-                return  _enclosure.GetEnclosureById(id);
+                return  Ok(_enclosure.GetEnclosureById(id));
             }
             catch (EnclosureNotFoundException ex)
             {
@@ -94,7 +99,7 @@ namespace Electric.Controllers
             try
             {
                 _enclosure.DeleteEnclosure(id);
-                return StatusCode(204);
+                return NoContent();
             }
             catch (EnclosureNotFoundException ex)
             {
@@ -115,8 +120,8 @@ namespace Electric.Controllers
         {
             try
             {
-                return _enclosure.UpdateEnclosure(id, enclosureDao.Name, enclosureDao.EnclosureSpecs.Rows,
-                    enclosureDao.EnclosureSpecs.Columns);
+                return Ok(_enclosure.UpdateEnclosure(id, enclosureDao.Name, enclosureDao.EnclosureSpecs.Rows,
+                    enclosureDao.EnclosureSpecs.Columns));
             }
             catch (EnclosureNotFoundException ex)
             {
@@ -129,7 +134,6 @@ namespace Electric.Controllers
             }
         }
         
-       
         [HttpGet("pdf")]
         public async Task<IActionResult> CreatePdf()
         {

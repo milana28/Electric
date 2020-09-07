@@ -28,10 +28,17 @@ namespace Electric.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Project> CreateProject(ProjectDao project)
         {
-            return _project.CreateProject(project);
+            try
+            {
+                return Created("https://localhost:5001/Project", _project.CreateProject(project));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpPost("{projectId}/enclosure/{enclosureId}/device")]
@@ -50,7 +57,7 @@ namespace Electric.Controllers
 
                 Task.Run(() => { _enclosure.RecalculateTotalPrice(enclosure); });
 
-                return _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice);
+                return Created("https://localhost:5001/Project", _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice));
             }
             catch (EnclosureNotFoundException ex)
             {
@@ -66,10 +73,17 @@ namespace Electric.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<List<Models.Project>> GetAll()
         {
-            return _project.GetAll();
+            try
+            {
+                return Ok(_project.GetAll());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpGet("{id}")]
@@ -80,7 +94,7 @@ namespace Electric.Controllers
         {
             try
             {
-               return _project.GetProjectById(id);
+               return Ok(_project.GetProjectById(id));
             }
             catch (ProjectNotFountException ex)
             {
@@ -107,7 +121,7 @@ namespace Electric.Controllers
                     return NotFound("Enclosure with that ProjectID doesn't exist!");
                 }
 
-                return _enclosure.GetEnclosureWithDevice(enclosureId, deviceId);
+                return Ok(_enclosure.GetEnclosureWithDevice(enclosureId, deviceId));
             }
             catch (EnclosureNotFoundException ex)
             {
@@ -130,7 +144,7 @@ namespace Electric.Controllers
             try
             {
                 _project.DeleteProject(id);
-                return StatusCode(204);
+                return NoContent();
             }
             catch (ProjectNotFountException ex)
             {
@@ -144,7 +158,7 @@ namespace Electric.Controllers
         }
         
         [HttpDelete("{projectId}/enclosure/{enclosureId}/device/{deviceId}")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> DeleteDevice(int projectId, int enclosureId, int deviceId)
@@ -159,7 +173,7 @@ namespace Electric.Controllers
 
                 Task.Run(() => { _enclosure.RecalculateTotalPrice(enclosure); });
 
-                return _enclosure.RemoveDevice(projectId, enclosureId, deviceId);
+                return Ok(_enclosure.RemoveDevice(projectId, enclosureId, deviceId));
             }
             catch (EnclosureNotFoundException ex)
             {

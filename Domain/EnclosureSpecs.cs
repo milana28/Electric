@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
+using Electric.Exceptions;
 using Electric.Models;
 using Electric.Utils;
 
@@ -55,14 +56,27 @@ namespace Electric.Domain
         public Models.EnclosureSpecs GetEnclosureSpecsByEnclosureId(int id)
         {
             const string sql= "SELECT * FROM Electric.EnclosureSpecs WHERE enclosureId = @enclosureId";
-            return  _database.QueryFirstOrDefault<Models.EnclosureSpecs>(sql, new {enclosureId = id});
+            var enclosureSpecs =  _database.QueryFirstOrDefault<Models.EnclosureSpecs>(sql, new {enclosureId = id});
+
+            if (enclosureSpecs == null)
+            {
+                throw new EnclosureSpecsNotFoundException("Enclosure specs does not exist!");
+            }
+
+            return enclosureSpecs;
         }
         public Models.EnclosureSpecs DeleteEnclosureSpecs(int id)
         {
+            var enclosureSpecs = GetEnclosureSpecsById(id);
+            if (enclosureSpecs == null)
+            {
+                throw new EnclosureSpecsNotFoundException("Enclosure specs does not exist!");
+            }
+            
             const string sql= "DELETE FROM Electric.EnclosureSpecs WHERE id = @deviceId";
             _database.Execute(sql, new {deviceId = id});
 
-            return GetEnclosureSpecsById(id);
+            return enclosureSpecs;
         }
         private static bool DoesEnclosureExist(int enclosureId)
         {

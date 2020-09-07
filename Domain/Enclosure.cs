@@ -85,7 +85,7 @@ namespace Electric.Domain
         public List<Models.Enclosure> GetEnclosuresByProjectId(int? id)
         {
             var enclosureList = new List<Models.Enclosure>();
-         
+
             const string sql= "SELECT * FROM Electric.Enclosure WHERE projectId = @projectId";
             var enclosures = _database.Query<EnclosureDao>(sql, new {projectId = id}).ToList();
 
