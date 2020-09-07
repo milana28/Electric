@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
+using Electric.Exceptions;
 using Electric.Models;
 using Electric.Utils;
 
@@ -26,7 +27,6 @@ namespace Electric.Domain
             _database = database.Get();
             _enclosure = enclosure;
         }
-        
         public Models.Project CreateProject(ProjectDao project)
         {
             var projectDao = new ProjectDao()
@@ -40,7 +40,6 @@ namespace Electric.Domain
 
             return TransformDaoToBusinessLogicProject(_database.QueryFirst<ProjectDao>(insertQuery, projectDao));
         }
-
         public List<Models.Project> GetAll()
         {
             var projectList = new List<Models.Project>();
@@ -51,23 +50,31 @@ namespace Electric.Domain
 
             return projectList;
         }
-        
         public Models.Project GetProjectById(int id)
         {
             const string sql= "SELECT * FROM Electric.Project WHERE id = @projectId";
-            var project = _database.QuerySingle<ProjectDao>(sql, new {projectId = id});
+            var project = _database.QueryFirstOrDefault<ProjectDao>(sql, new {projectId = id});
+
+            if (project == null)
+            {
+                throw new ProjectNotFountException("Project does not exist!");
+            }
 
             return TransformDaoToBusinessLogicProject(project);
         }
-        
         public Models.Project DeleteProject(int id)
         {
             const string sql= "DELETE FROM Electric.Project WHERE id = @projectId";
             _database.Execute(sql, new {projectId = id});
 
-            return GetProjectById(id);
-        }
+            var project =  GetProjectById(id); 
+            if (project == null)
+            {
+                throw new ProjectNotFountException("Project does not exist!");
+            }
 
+            return project;
+        }
         public static void UpdateProjectDate(int projectId)
         {
             var updateDate = DateTime.Now;
@@ -75,7 +82,6 @@ namespace Electric.Domain
             const string sql= "UPDATE Electric.Project SET updateDate = @date WHERE id = @id";
             _database.Execute(sql, new {id = projectId, date = updateDate});
         }
-        
         private Models.Project TransformDaoToBusinessLogicProject(ProjectDao projectDao)
         {
             var enclosures = _enclosure.GetEnclosuresByProjectId(projectDao.Id);

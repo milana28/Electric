@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Electric.Domain;
+using Electric.Exceptions;
 using Electric.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Electric.Controllers
 {
@@ -13,11 +16,13 @@ namespace Electric.Controllers
     {
         private readonly IProject _project;
         private readonly IEnclosure _enclosure;
+        private readonly ILogger<ProjectController> _logger;
 
-        public ProjectController(IProject project, IEnclosure enclosure)
+        public ProjectController(IProject project, IEnclosure enclosure, ILogger<ProjectController> logger)
         {
             _project = project;
             _enclosure = enclosure;
+            _logger = logger;
         }
         
         [HttpPost]
@@ -35,25 +40,27 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> AddDeviceToEnclosure(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
-            var enclosure = _enclosure.GetEnclosureById(enclosureId);
-            if (enclosure == null)
+            try
             {
-                return NotFound("Enclosure with that ID doesn't exist!");
+                var enclosure = _enclosure.GetEnclosureById(enclosureId);
+                if (enclosure.ProjectId != projectId)
+                {
+                    return NotFound("Enclosure with that ProjectID doesn't exist!");
+                }
+
+                Task.Run(() => { _enclosure.RecalculateTotalPrice(enclosure); });
+
+                return _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice);
             }
-
-            if (enclosure.ProjectId != projectId)
+            catch (EnclosureNotFoundException ex)
             {
-                return NotFound("Enclosure with that ProjectID doesn't exist!");
+                return NotFound(ex.Message);
             }
-            
-            var enclosureWithDevice = _enclosure.AddNewDevice(projectId, enclosureId, enclosureDevice);
-
-            Task.Run(() =>
+            catch (Exception ex)
             {
-                _enclosure.RecalculateTotalPrice(enclosure);
-            });
-
-            return enclosureWithDevice;
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpGet]
@@ -71,13 +78,19 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Project> GetProjectById(int id)
         {
-            var project = _project.GetProjectById(id);
-            if (project == null)
+            try
             {
-                return NotFound();
+               return _project.GetProjectById(id);
             }
-
-            return project;
+            catch (ProjectNotFountException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpGet("{projectId}/enclosure/{enclosureId}/device/{deviceId}")]
@@ -86,18 +99,25 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> GetEnclosureWithDevice(int projectId, int enclosureId, int deviceId)
         {
-            var enclosure = _enclosure.GetEnclosureById(enclosureId);
-            if (enclosure == null)
+            try
             {
-                return NotFound("Enclosure with that ID doesn't exist!");
-            }
+                var enclosure = _enclosure.GetEnclosureById(enclosureId);
+                if (enclosure.ProjectId != projectId)
+                {
+                    return NotFound("Enclosure with that ProjectID doesn't exist!");
+                }
 
-            if (enclosure.ProjectId != projectId)
-            {
-                return NotFound("Enclosure with that ProjectID doesn't exist!");
+                return _enclosure.GetEnclosureWithDevice(enclosureId, deviceId);
             }
-            
-            return _enclosure.GetEnclosureWithDevice(enclosureId, deviceId);
+            catch (EnclosureNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
 
         
@@ -107,13 +127,19 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Project> DeleteProject(int id)
         {
-            var project = _project.GetProjectById(id);
-            if (project == null)
+            try
             {
-                return NotFound();
+                return _project.DeleteProject(id);
             }
-
-            return _project.DeleteProject(id);
+            catch (ProjectNotFountException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpDelete("{projectId}/enclosure/{enclosureId}/device/{deviceId}")]
@@ -122,25 +148,28 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> DeleteDevice(int projectId, int enclosureId, int deviceId)
         {
-            var enclosure = _enclosure.GetEnclosureById(enclosureId);
-            if (enclosure == null)
+            try
             {
-                return NotFound("Enclosure with that ID doesn't exist!");
+                var enclosure = _enclosure.GetEnclosureById(enclosureId);
+                if (enclosure.ProjectId != projectId)
+                {
+                    return NotFound("Enclosure with that ProjectID doesn't exist!");
+                }
+
+                Task.Run(() => { _enclosure.RecalculateTotalPrice(enclosure); });
+
+                return _enclosure.RemoveDevice(projectId, enclosureId, deviceId);
             }
-
-            if (enclosure.ProjectId != projectId)
+            catch (EnclosureNotFoundException ex)
             {
-                return NotFound("Enclosure with that ProjectID doesn't exist!");
+                return NotFound(ex.Message);
             }
-            
-            var enclosureWithDevice = _enclosure.RemoveDevice(projectId, enclosureId, deviceId);
-
-            Task.Run(() =>
+            catch (Exception ex)
             {
-                _enclosure.RecalculateTotalPrice(enclosure);
-            });
-
-            return enclosureWithDevice;
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
+          
         }
     }
 }

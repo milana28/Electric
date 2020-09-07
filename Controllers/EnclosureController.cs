@@ -1,16 +1,18 @@
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Electric.Domain;
+using Electric.Exceptions;
 using Electric.Models;
 using Electric.Pdf;
 using IronPdf;
-using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Electric.Controllers
 {
@@ -21,12 +23,14 @@ namespace Electric.Controllers
         private readonly IEnclosure _enclosure;
         private readonly IConverter _converter;
         private readonly TemplateGenerator _template;
+        private readonly ILogger<EnclosureController> _logger;
 
-        public EnclosureController(IEnclosure enclosure, IConverter converter, TemplateGenerator templateGenerator)
+        public EnclosureController(IEnclosure enclosure, IConverter converter, TemplateGenerator templateGenerator, ILogger<EnclosureController> logger)
         {
             _enclosure = enclosure;
             _converter = converter;
             _template = templateGenerator;
+            _logger = logger;
         }
         
         [HttpPost]
@@ -35,7 +39,20 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> CreateEnclosure(EnclosureDao enclosure)
         {
-            return _enclosure.CreateEnclosure(enclosure);
+            try
+            {
+                return _enclosure.CreateEnclosure(enclosure);
+            }
+            catch (ProjectNotFountException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
+            
         }
         
         [HttpGet]
@@ -53,13 +70,19 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> GetEnclosureById(int id)
         {
-            var enclosure = _enclosure.GetEnclosureById(id);
-            if (enclosure == null)
+            try
             {
-                return NotFound();
+                return  _enclosure.GetEnclosureById(id);
             }
-
-            return enclosure;
+            catch (EnclosureNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpDelete("{id}")]
@@ -68,13 +91,19 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> DeleteEnclosure(int id)
         {
-            var enclosure = _enclosure.GetEnclosureById(id);
-            if (enclosure == null)
+            try
             {
-                return NotFound();
+                return _enclosure.DeleteEnclosure(id);
             }
-
-            return _enclosure.DeleteEnclosure(id);
+            catch (EnclosureNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
         [HttpPut("{id}")]
@@ -83,13 +112,20 @@ namespace Electric.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> UpdateEnclosure(int id, Models.Enclosure enclosureDao)
         {
-            var enclosure = _enclosure.GetEnclosureById(id);
-            if (enclosure == null)
+            try
             {
-                return NotFound();
+                return _enclosure.UpdateEnclosure(id, enclosureDao.Name, enclosureDao.EnclosureSpecs.Rows,
+                    enclosureDao.EnclosureSpecs.Columns);
             }
-
-            return _enclosure.UpdateEnclosure(id, enclosureDao.Name, enclosureDao.EnclosureSpecs.Rows, enclosureDao.EnclosureSpecs.Columns);
+            catch (EnclosureNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error", ex);
+                return BadRequest();
+            }
         }
         
        

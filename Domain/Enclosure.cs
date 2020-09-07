@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
+using Electric.Exceptions;
 using Electric.Models;
 using Electric.Utils;
+using Xunit.Sdk;
 
 namespace Electric.Domain
 {
@@ -40,7 +42,7 @@ namespace Electric.Domain
         {
             if (!DoesProjectExist(enclosure.ProjectId))
             {
-                return null;
+                throw new ProjectNotFountException("Project does not exist!");
             }
 
             var enclosureDao = new EnclosureDao()
@@ -54,12 +56,10 @@ namespace Electric.Domain
           
             return TransformDaoToBusinessLogicEnclosure(_database.QueryFirst<EnclosureDao>(insertQuery, enclosureDao));
         }
-
         public List<Models.Enclosure> GetEnclosures(int? projectId)
         {
             return projectId == null ? GetAll() : GetEnclosuresByProjectId(projectId);
         }
-        
         public List<Models.Enclosure> GetAll()
         {
             var enclosureList = new List<Models.Enclosure>();
@@ -70,16 +70,18 @@ namespace Electric.Domain
 
             return enclosureList;
         }
-        
         public Models.Enclosure GetEnclosureById(int id)
         {
             const string sql= "SELECT * FROM Electric.Enclosure WHERE id = @enclosureId";
+            var enclosure = _database.QueryFirstOrDefault<EnclosureDao>(sql, new {enclosureId = id});
             
-            var enclosure = _database.QuerySingle<EnclosureDao>(sql, new {enclosureId = id});
+            if (enclosure ==  null)
+            {
+                throw new EnclosureNotFoundException("Enclosure does not exist!");
+            }
 
             return TransformDaoToBusinessLogicEnclosure(enclosure);
         }
-        
         public List<Models.Enclosure> GetEnclosuresByProjectId(int? id)
         {
             var enclosureList = new List<Models.Enclosure>();
@@ -91,15 +93,19 @@ namespace Electric.Domain
 
             return enclosureList;
         }
-        
         public Models.Enclosure DeleteEnclosure(int id)
         {
+            var enclosure = GetEnclosureById(id);
+            if (enclosure ==  null)
+            {
+                throw new EnclosureNotFoundException("Enclosure does not exist!");
+            }
+            
             const string sql= "DELETE FROM Electric.Enclosure WHERE id = @enclosureId";
             _database.Execute(sql, new {enclosureId = id});
-
+            
             return GetEnclosureById(id);
         }
-
         public Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {
             if (!CheckIfRowsAndColumnsAreSuitableForEnclosure(enclosureId, enclosureDevice))
@@ -117,7 +123,11 @@ namespace Electric.Domain
             }
             
             var enclosure = GetEnclosureById(enclosureId);
-            
+            if (enclosure ==  null)
+            {
+                throw new EnclosureNotFoundException("Enclosure does not exist!");
+            }
+
             const string insertEnclosureDevice = "INSERT INTO Electric.Enclosure_Device VALUES (@enclosureID, @deviceID, @row, @column)";
             _database.Execute(insertEnclosureDevice, 
                 new {enclosureID = enclosureId, deviceID = enclosureDevice.DeviceId, row = enclosureDevice.Row, column = enclosureDevice.Column});
@@ -137,10 +147,13 @@ namespace Electric.Domain
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
-        
         public Models.Enclosure RemoveDevice(int projectId, int enclosureId, int deviceId)
         {
             var enclosure = GetEnclosureById(enclosureId);
+            if (enclosure ==  null)
+            {
+                throw new EnclosureNotFoundException("Enclosure does not exist!");
+            }
             
             const string enclosureDevice = "DELETE FROM Electric.Enclosure_Device WHERE deviceId = @deviceID AND enclosureId = @enclosureID";
             _database.Execute(enclosureDevice, new {enclosureID = enclosureId, deviceID = deviceId});
@@ -160,11 +173,14 @@ namespace Electric.Domain
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
-        
         public Models.Enclosure GetEnclosureWithDevice(int enclosureId, int deviceId)
         {
             var devices = _device.GetDeviceForEnclosureById(enclosureId, deviceId);
             var enclosure = GetEnclosureById(enclosureId);
+            if (enclosure ==  null)
+            {
+                throw new EnclosureNotFoundException("Enclosure does not exist!");
+            }
 
             return new Models.Enclosure()
             {
@@ -177,14 +193,12 @@ namespace Electric.Domain
                 EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosure.Id),
             };
         }
-        
         public void RecalculateTotalPrice(Models.Enclosure enclosure)
         {
             const string updateEnclosure = "UPDATE Electric.Enclosure SET totalPrice = @totalPrice WHERE id = @enclosureID";
             _database.Execute(updateEnclosure, 
                 new {enclosureID = enclosure.Id, totalPrice = CalculateTotalPrice(enclosure, null)});
         }
-
         public Models.Enclosure UpdateEnclosure(int enclosureId, string name, int rows, int columns)
         {
             const string sql = 
@@ -203,28 +217,15 @@ namespace Electric.Domain
             _database.Execute(updateEnclosure, new {enclosureID = enclosureId, newName = name});
             
             var enclosure = GetEnclosureById(enclosureId);
+            if (enclosure ==  null)
+            {
+                throw new EnclosureNotFoundException("Enclosure does not exist!");
+            }
+            
             Project.UpdateProjectDate(enclosure.ProjectId);
 
             return enclosure;
         }
-
-        private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
-        {
-            var devices = _device.GetDevicesForEnclosure(enclosureDao.Id);
-            var enclosure = new Models.Enclosure()
-            {
-                Id = enclosureDao.Id,
-                Name = enclosureDao.Name,
-                Date = enclosureDao.Date,
-                ProjectId = enclosureDao.ProjectId,
-                Devices = devices,
-                TotalPrice = enclosureDao.TotalPrice,
-                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id),
-            };
-
-            return enclosure;
-        }
-
         public static bool CheckIfEnclosureSpecsIsAppropriate(List<DeviceDto> devicesWithPosition, int rows, int columns)
         {
             var allColumns = new List<int>();
@@ -257,7 +258,23 @@ namespace Electric.Domain
 
             return maxColumn <= columns && maxRow <= rows && (maxWidth + maxColumn - 1) <= columns && (maxHeight + maxRow - 1) <= rows;
         }
-        
+        public static bool AreRowsAndColumnsSuitableForEnclosureDimensions(int deviceRow, int deviceColumn, int enclosureRows,
+            int enclosureColumns, int deviceWidth, int deviceHeight)
+        {
+            return (deviceRow <= enclosureRows && deviceColumn <= enclosureColumns) && 
+                   ((deviceRow + deviceHeight - 1) <= enclosureRows && 
+                    (deviceColumn + deviceWidth - 1) <= enclosureColumns);
+        }
+        public static bool NoExistingDevicesWithSameRow(int deviceRow, int existingDeviceRow, int deviceHeight, int existingDeviceHeight)
+        {
+            return deviceRow != existingDeviceRow && deviceRow != existingDeviceRow + existingDeviceHeight - 1 &&
+                   deviceRow + deviceHeight - 1 != existingDeviceRow;
+        }
+        public static bool DoesDevicesColumnOverlapWithExistingDevicesColumn(int deviceColumn, int existingDeviceColumn, int deviceWidth, int existingDeviceWidth)
+        {
+            return (deviceColumn >= existingDeviceColumn && deviceColumn <= (existingDeviceColumn + existingDeviceWidth - 1)) ||
+                   (deviceColumn <= existingDeviceColumn && (deviceColumn + deviceWidth - 1) >= existingDeviceColumn);
+        }
         private float CalculateTotalPrice(Models.Enclosure enclosure, List<DeviceDto>? deviceWithPosition)
         {
             var totalPrice = new float();
@@ -273,7 +290,22 @@ namespace Electric.Domain
             
             return totalPrice;
         }
+        private Models.Enclosure TransformDaoToBusinessLogicEnclosure(EnclosureDao enclosureDao)
+        {
+            var devices = _device.GetDevicesForEnclosure(enclosureDao.Id);
+            var enclosure = new Models.Enclosure()
+            {
+                Id = enclosureDao.Id,
+                Name = enclosureDao.Name,
+                Date = enclosureDao.Date,
+                ProjectId = enclosureDao.ProjectId,
+                Devices = devices,
+                TotalPrice = enclosureDao.TotalPrice,
+                EnclosureSpecs = _enclosureSpecs.GetEnclosureSpecsByEnclosureId(enclosureDao.Id),
+            };
 
+            return enclosure;
+        }
         private bool CheckIfRowsAndColumnsAreSuitableForEnclosure(int enclosureId, Enclosure_Device enclosureDevice)
         {
             var enclosure = GetEnclosureById(enclosureId);
@@ -282,15 +314,6 @@ namespace Electric.Domain
             return AreRowsAndColumnsSuitableForEnclosureDimensions(enclosureDevice.Row, enclosureDevice.Column,
                 enclosure.EnclosureSpecs.Rows, enclosure.EnclosureSpecs.Columns, device.Width, device.Height);
         }
-
-        public static bool AreRowsAndColumnsSuitableForEnclosureDimensions(int deviceRow, int deviceColumn, int enclosureRows,
-            int enclosureColumns, int deviceWidth, int deviceHeight)
-        {
-            return (deviceRow <= enclosureRows && deviceColumn <= enclosureColumns) && 
-                   ((deviceRow + deviceHeight - 1) <= enclosureRows && 
-                    (deviceColumn + deviceWidth - 1) <= enclosureColumns);
-        }
-
         private bool CheckIfPositionIsAvailable(List<DeviceDto> existingDevicesWithPosition, Enclosure_Device enclosureDevice)
         {
             var device = _device.GetDeviceById(enclosureDevice.DeviceId);
@@ -312,24 +335,11 @@ namespace Electric.Domain
 
             return existingEnclosureDevices.Count == 0;
         }
-
-        public static bool NoExistingDevicesWithSameRow(int deviceRow, int existingDeviceRow, int deviceHeight, int existingDeviceHeight)
-        {
-            return deviceRow != existingDeviceRow && deviceRow != existingDeviceRow + existingDeviceHeight - 1 &&
-                   deviceRow + deviceHeight - 1 != existingDeviceRow;
-        }
-        
-        public static bool DoesDevicesColumnOverlapWithExistingDevicesColumn(int deviceColumn, int existingDeviceColumn, int deviceWidth, int existingDeviceWidth)
-        {
-            return (deviceColumn >= existingDeviceColumn && deviceColumn <= (existingDeviceColumn + existingDeviceWidth - 1)) ||
-                   (deviceColumn <= existingDeviceColumn && (deviceColumn + deviceWidth - 1) >= existingDeviceColumn);
-        }
-        
         private bool DoesProjectExist(int projectId)
         {
             const string sql = "SELECT * FROM Electric.Project WHERE id = @id";
-            var project = _database.QuerySingle<ProjectDao>(sql, new {id = projectId});
-
+            var project = _database.QueryFirstOrDefault<ProjectDao>(sql, new {id = projectId});
+            
             return project != null;
         }
     }

@@ -42,12 +42,10 @@ namespace Electric.Domain
             
             return _database.QueryFirst<Models.Device>(insertQuery, newDevice);
         }
-        
         public List<Models.Device> GetAll()
         {
             return _database.Query<Models.Device>("SELECT * FROM Electric.Device").ToList();
         }
-     
         public List<DeviceDto> GetDevicesForEnclosure(int enclosureId)
         {
             const string sql =
@@ -60,13 +58,11 @@ namespace Electric.Domain
                 "SELECT ed.enclosureId, d.*, ed.row, ed.[column] FROM Electric.Enclosure_Device AS ed LEFT JOIN Electric.Device AS d ON ed.deviceId = d.id WHERE d.id = @deviceID AND ed.enclosureId = @enclosureID";
             return  _database.Query<DeviceDto>(sql, new {deviceID = deviceId, enclosureID = enclosureId}).ToList();
         }
-
         public Models.Device GetDeviceById(int id)
         {
             const string sql = "SELECT * FROM Electric.Device WHERE id = @deviceId";
             return _database.QueryFirstOrDefault<Models.Device>(sql, new {deviceId = id} );
         }
-        
         public Models.Device DeleteDevice(int id)
         {
             const string sql= "DELETE FROM Electric.Device WHERE id = @deviceId";
