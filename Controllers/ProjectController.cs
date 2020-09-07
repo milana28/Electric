@@ -122,14 +122,15 @@ namespace Electric.Controllers
 
         
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Project> DeleteProject(int id)
         {
             try
             {
-                return _project.DeleteProject(id);
+                _project.DeleteProject(id);
+                return StatusCode(204);
             }
             catch (ProjectNotFountException ex)
             {

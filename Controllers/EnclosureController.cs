@@ -86,14 +86,15 @@ namespace Electric.Controllers
         }
         
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<Models.Enclosure> DeleteEnclosure(int id)
         {
             try
             {
-                return _enclosure.DeleteEnclosure(id);
+                _enclosure.DeleteEnclosure(id);
+                return StatusCode(204);
             }
             catch (EnclosureNotFoundException ex)
             {
