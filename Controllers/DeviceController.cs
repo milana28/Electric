@@ -5,7 +5,6 @@ using Electric.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using RazorLight.Extensions;
 
 namespace Electric.Controllers
 {
