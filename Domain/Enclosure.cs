@@ -103,8 +103,8 @@ namespace Electric.Domain
             
             const string sql= "DELETE FROM Electric.Enclosure WHERE id = @enclosureId";
             _database.Execute(sql, new {enclosureId = id});
-            
-            return GetEnclosureById(id);
+
+            return enclosure;
         }
         public Models.Enclosure AddNewDevice(int projectId, int enclosureId, Enclosure_Device enclosureDevice)
         {

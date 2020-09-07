@@ -64,15 +64,14 @@ namespace Electric.Domain
         }
         public Models.Project DeleteProject(int id)
         {
-            const string sql= "DELETE FROM Electric.Project WHERE id = @projectId";
-            _database.Execute(sql, new {projectId = id});
-
             var project =  GetProjectById(id); 
             if (project == null)
             {
                 throw new ProjectNotFountException("Project does not exist!");
             }
-
+            const string sql= "DELETE FROM Electric.Project WHERE id = @projectId";
+            _database.Execute(sql, new {projectId = id});
+            
             return project;
         }
         public static void UpdateProjectDate(int projectId)
