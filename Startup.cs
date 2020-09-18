@@ -36,6 +36,7 @@ namespace Electric
             services.AddSingleton<TemplateGenerator>();
             services.AddSwaggerGen();
             services.AddRazorPages();
+            services.AddHttpContextAccessor();
 
             var context = new CustomAssemblyLoadContext(); 
             context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "libwkhtmltox.so"));

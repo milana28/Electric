@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using DinkToPdf;
 using DinkToPdf.Contracts;
+using Electric.Attributes;
 using Electric.Domain;
 using Electric.Exceptions;
 using Electric.Models;
@@ -33,6 +34,7 @@ namespace Electric.Controllers
         }
         
         [HttpPost]
+        [DoesProjectExist()]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -86,7 +88,7 @@ namespace Electric.Controllers
             catch (Exception ex)
             {
                 _logger.LogError("Error", ex);
-                return BadRequest();
+                return BadRequest(ex.Message);
             }
         }
         

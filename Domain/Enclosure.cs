@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
+using Electric.Attributes;
 using Electric.Exceptions;
 using Electric.Models;
 using Electric.Utils;
+using Microsoft.EntityFrameworkCore;
 using Xunit.Sdk;
 
 namespace Electric.Domain
@@ -30,20 +32,20 @@ namespace Electric.Domain
         private readonly IEnclosureSpecs _enclosureSpecs;
         private readonly IDevice _device;
         private readonly IDbConnection _database;
-
+        
         public Enclosure(IEnclosureSpecs enclosureSpecs, IDevice device, IDatabase database)
         {
             _enclosureSpecs = enclosureSpecs;
             _database = database.Get();
             _device = device;
         }
-
+        
         public Models.Enclosure CreateEnclosure(EnclosureDao enclosure)
         {
-            if (!DoesProjectExist(enclosure.ProjectId))
-            {
-                throw new ProjectNotFountException("Project does not exist!");
-            }
+            // if (!DoesProjectExist(enclosure.ProjectId))
+            // {
+            //     throw new ProjectNotFountException("Project does not exist!");
+            // }
 
             var enclosureDao = new EnclosureDao()
             {
@@ -341,6 +343,11 @@ namespace Electric.Domain
             var project = _database.QueryFirstOrDefault<ProjectDao>(sql, new {id = projectId});
             
             return project != null;
+        }
+        private ProjectDao GetProject(int projectId)
+        {
+            const string sql = "SELECT * FROM Electric.Project WHERE id = @id";
+            return _database.QueryFirstOrDefault<ProjectDao>(sql, new {id = projectId});
         }
     }
 }

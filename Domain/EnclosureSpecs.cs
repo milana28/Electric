@@ -58,10 +58,10 @@ namespace Electric.Domain
             const string sql= "SELECT * FROM Electric.EnclosureSpecs WHERE enclosureId = @enclosureId";
             var enclosureSpecs =  _database.QueryFirstOrDefault<Models.EnclosureSpecs>(sql, new {enclosureId = id});
 
-            if (enclosureSpecs == null)
-            {
-                throw new EnclosureSpecsNotFoundException("Enclosure specs does not exist!");
-            }
+            // if (enclosureSpecs == null)
+            // {
+            //     throw new EnclosureSpecsNotFoundException("Enclosure specs does not exist!");
+            // }
 
             return enclosureSpecs;
         }
