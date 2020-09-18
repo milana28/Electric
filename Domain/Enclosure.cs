@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
-using Electric.Attributes;
 using Electric.Exceptions;
 using Electric.Models;
 using Electric.Utils;
-using Microsoft.EntityFrameworkCore;
-using Xunit.Sdk;
 
 namespace Electric.Domain
 {
