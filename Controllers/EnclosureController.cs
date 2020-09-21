@@ -34,11 +34,11 @@ namespace Electric.Controllers
         }
         
         [HttpPost]
-        [DoesProjectExist()]
+        [ProjectExists]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<Models.Enclosure> CreateEnclosure(EnclosureDao enclosure)
+        public ActionResult<Models.Enclosure> CreateEnclosure([FromBody] EnclosureDao enclosure)
         {
             try
             {

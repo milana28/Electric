@@ -7,6 +7,7 @@ using Electric.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -36,8 +37,7 @@ namespace Electric
             services.AddSingleton<TemplateGenerator>();
             services.AddSwaggerGen();
             services.AddRazorPages();
-            services.AddHttpContextAccessor();
-
+         
             var context = new CustomAssemblyLoadContext(); 
             context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "libwkhtmltox.so"));
             services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
